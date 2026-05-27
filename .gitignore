@@ -1,0 +1,18 @@
+# files not to copy up to git
+
+# object and description files
+*.o 
+*.d 
+*.iso
+
+# libraries
+*.a 
+
+# the linker output file
+output.map
+
+#project specific
+*.kernel
+
+#IDE
+.vscode/
