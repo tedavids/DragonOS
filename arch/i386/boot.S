@@ -29,33 +29,6 @@
 .long FLAGS
 .long CHECKSUM
 
-# Allocate the initial stack.
-.section .bootstrap_stack, "aw", @nobits
-stack_bottom:
-.skip 16384 # 16 KiB
-stack_top:
-
-# Preallocate pages used for paging. Don't hard-code addresses and assume they
-# are available, as the bootloader might have loaded its multiboot structures or
-# modules there. This lets the bootloader know it must avoid the addresses.
-.section .bss, "aw", @nobits
-	.align 4096
-
-.global page_directory
-.type page_directory, @object
-page_directory:
-	.skip 4096
-.global page_table_0000
-.type page_table_0000, @object
-page_table_0000:
-.skip 4096
-
-.global page_table_C000
-.type page_table_C000, @object
-page_table_C000:
-	.skip 4096
-# Further page tables may be required if the kernel grows beyond 3 MiB.
-
 # The kernel entry point.
 # This will do the initial switch to virtual address space
 .section .multiboot.text, "a"
@@ -154,3 +127,30 @@ _start2:
 	cli
 1:	hlt
 	jmp 1b
+
+# Allocate the initial stack.
+.section .bootstrap_stack, "aw", @nobits
+stack_bottom:
+.skip 16384 # 16 KiB
+stack_top:
+
+# Preallocate pages used for paging. Don't hard-code addresses and assume they
+# are available, as the bootloader might have loaded its multiboot structures or
+# modules there. This lets the bootloader know it must avoid the addresses.
+.section .bss, "aw", @nobits
+	.align 4096
+
+.global page_directory
+.type page_directory, @object
+page_directory:
+	.skip 4096
+.global page_table_0000
+.type page_table_0000, @object
+page_table_0000:
+.skip 4096
+
+.global page_table_C000
+.type page_table_C000, @object
+page_table_C000:
+	.skip 4096
+# Further page tables may be required if the kernel grows beyond 3 MiB.
