@@ -46,10 +46,12 @@ _start:
 
 bootprocaddress:
 	# Only map the kernel.
-	cmpl $_kernel_start, %esi
+	cmpl $(_boot_kernel_start), %esi
 	jl loadaddress
+
+	# do we have the entire kernel
 	cmpl $(_kernel_end - 0xC0000000), %esi
-	jge krnlmapdone
+	jg krnlmapdone
 
 	# Map physical address as "present, writable". Note that this maps
 	# .text and .rodata as writable. TODO: write a function to set permissions
@@ -129,7 +131,8 @@ _start2:
 	jmp 1b
 
 # Allocate the initial stack.
-.section .bootstrap_stack, "aw", @nobits
+.section .data
+.align 4096
 stack_bottom:
 .skip 16384 # 16 KiB
 stack_top:
@@ -137,7 +140,7 @@ stack_top:
 # Preallocate pages used for paging. Don't hard-code addresses and assume they
 # are available, as the bootloader might have loaded its multiboot structures or
 # modules there. This lets the bootloader know it must avoid the addresses.
-.section .bss, "aw", @nobits
+.section .bss
 	.align 4096
 
 .global page_directory

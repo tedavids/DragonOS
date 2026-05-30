@@ -145,9 +145,9 @@ clean:
 
 
 run:
-	qemu-system-i386 -kernel DragonOS.kernel -append "-kheap=1M"
+	qemu-system-i386 -kernel DragonOS.kernel -append "-kheap=1M" -d int -no-reboot
 
 debug:
-	qemu-system-i386 -kernel DragonOS.kernel -append "-kheap=1M" -s -S
+	qemu-system-i386 -kernel DragonOS.kernel -append "-kheap=1M" -d int -no-reboot -s -S
 
 -include $(OBJS:.o=.d)
