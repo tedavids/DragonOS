@@ -35,8 +35,17 @@
 .global _start
 .type _start, @function
 _start:
-	# Physical address of page_table_C000.
-	movl $(page_table_C000 - 0xC0000000), %edi
+	# inhibit interrupts until the APIC is set up
+	cli
+
+	# mask the APIC until we get it set up
+	xor %ax, %ax
+	mov	0xFF, %al
+	out	%al, $0x21		# Mask all master PIC IRQs
+	out %al, $0xA1		# Mask all slave PIC IRQs
+
+	# Physical address of page_table_C00.
+	movl $(page_table_C00 - 0xC0000000), %edi
 
 	# First address to map is address 0.
 	movl $0, %esi
@@ -63,7 +72,7 @@ bootprocaddress:
 loadaddress:
 	# Size of page is 4096 bytes.
 	addl $4096, %esi
-	# Size of entries in page_table_C000 is 4 bytes.
+	# Size of entries in page_table_C00 is 4 bytes.
 	addl $4, %edi
 	# Loop to the next entry if we haven't finished.
 	loop bootprocaddress
@@ -72,7 +81,7 @@ loadaddress:
 .global krnlmapdone
 krnlmapdone:
 	# Map VGA video memory to 0xC03FF000 as "present, writable".
-	movl $(0x000B8000 | 0x003), page_table_C000 - 0xC0000000 + 1023 * 4
+	movl $(0x000B8000 | 0x003), page_table_C00 - 0xC0000000 + 1023 * 4
 
 	# The page table is used at both page directory entry 0 (virtually from 0x0
 	# to 0x3FFFFF) (thus identity mapping the kernel) and page directory entry
@@ -80,11 +89,10 @@ krnlmapdone:
 	# higher half). The kernel is identity mapped because enabling paging does
 	# not change the next instruction, which continues to be physical. The CPU
 	# would instead page fault if there was no identity mapping.
-.global debug
-debug:
+
 	# Map the page table to both virtual addresses 0x00000000 and 0xC0000000.
-	movl $(page_table_C000 - 0xC0000000 + 0x003), page_directory - 0xC0000000 + 0
-	movl $(page_table_C000 - 0xC0000000 + 0x003), page_directory - 0xC0000000 + 768 * 4
+	movl $(page_table_C00 - 0xC0000000 + 0x003), page_directory - 0xC0000000 + 0
+	movl $(page_table_C00 - 0xC0000000 + 0x003), page_directory - 0xC0000000 + 768 * 4
 
 	# Set cr3 to the address of the page_directory.
 	movl $(page_directory - 0xC0000000), %ecx
@@ -98,7 +106,17 @@ debug:
 	# Jump to higher half with an absolute jump. 
 	lea _start2, %ecx
 	jmp *%ecx
-	
+
+
+
+
+
+#   TTTTTTTT  EEEEEEEE  XX   XX  TTTTTTTT
+#      TT     EE         XX XX      TT
+#      TT     EEEEE       XXX       TT
+#      TT     EE         XX XX      TT
+#      TT     EEEEEEEE  XX   XX     TT
+
 .section .text
 .global _start2
 _start2:
@@ -121,7 +139,37 @@ _start2:
 	movl %cr3, %ecx
 	movl %ecx, %cr3
 
-	# Enter the high-level kernel.
+	# load the GDT
+
+    # load Global Discriptor Table
+
+    lgdt GDTP
+
+     mov $0x10, %ax
+     mov %ax, %ds
+     mov %ax, %es
+     mov %ax, %fs
+     mov %ax, %gs
+     mov %ax, %ss
+    ljmp $0x08, $flush_CS    #KERNEL_CODE_SELECTOR
+flush_CS:
+
+    mov $0x10, %eax
+    mov %ax, %ds
+
+
+    # GDT loaded
+    movl BOOTSTATUS, %eax
+    addl GDTLOADED, %eax
+    movl %eax, BOOTSTATUS
+
+	# map page zero
+	call	MapPage0
+
+
+	# Enter the high-level kernel.  Interrupts are still
+	# supressed, you must call EnableInterrupts once the 
+	# IDT and APIC are set up
 
 	call kernel_main
 
@@ -130,6 +178,87 @@ _start2:
 1:	hlt
 	jmp 1b
 
+	# This function maps the pages for the base 1M
+MapPage0:
+		# Physical address of page_table_C00.
+	movl $page_table_000, %edi
+
+	# First address to map is address 0.
+	movl $0, %esi
+
+	# Map 255 pages. just less than 0x100000
+	movl $255, %ecx
+
+proczeroaddress:
+
+	# Only the first 1M
+	cmpl $0x100000, %esi
+	jge zeromapdone
+
+	# Map physical address as "present, writable". Note that this maps
+	# the bios and as writable
+
+	movl %esi, %edx		# this is our address
+	orl $0x003, %edx	# set present and writable bits
+	movl %edx, (%edi)	# put it in the table
+
+# Size of page is 4096 bytes.
+	addl $4096, %esi
+	# Size of entries in page_table_C00 is 4 bytes.
+	addl $4, %edi
+	# Loop to the next entry if we haven't finished.
+	loop proczeroaddress
+
+zeromapdone:
+# MapPage0
+	movl $page_table_000 + 0x003, page_directory + 0
+
+	ret
+
+
+.global DisableInterrupts
+.type DisableInterrupts, @function
+DisableInterrupts:
+	cli
+	ret
+
+.global EnableInterrupts
+.type EnableInterrupts, @function
+EnableInterrupts:
+	sti
+	ret
+
+#	RRRRRR    OOOOOOOO  DDDDDD       A      TTTTTTTT      A
+#   RR    RR  OO    OO  DD   DD     AAA        TT        AAA
+#	RRRRRR    OO    OO  DD    DD   AA AA       TT       AA AA
+#   RR   RR   OO    OO  DD   DD   AAAAAAA      TT      AAAAAAA
+#   RR    RR  OOOOOOOO  DDDDDD   AA     AA     TT     AA     AA
+
+.section .rodata
+.align 4096
+# BOOTSTATUS constants
+.global GDTLOADED
+.type GDTLOADED, @object
+GDTLOADED:    .long 0x00000001
+.global IDTLOADED
+.type IDTLOADED, @object
+IDTLOADED:    .long 0x00000002
+.global TSSLOADED
+.type TSSLOADED, @object
+TSSLOADED:    .long 0x00000004
+.global MEMMAPLOADED
+.type MEMMAPLOADED, @object
+MEMMAPLOADED: .long 0x00000008
+.global PAGINGIMPLEMENTED
+.type PAGINGIMPLEMENTED, @object
+PAGINGIMPLEMENTED: .long 0x00000010
+
+#	DDDDDD        A      TTTTTTTT      A
+#   DD   DD      AAA        TT        AAA
+#   DD    DD    AA AA       TT       AA AA
+#   DD   DD    AAAAAAA      TT      AAAAAAA
+#   DDDDDD    AA     AA     TT     AA     AA
+
 # Allocate the initial stack.
 .section .data
 .align 4096
@@ -137,23 +266,91 @@ stack_bottom:
 .skip 16384 # 16 KiB
 stack_top:
 
+# boot status
+.global BOOTSTATUS
+.type BOOTSTATUS, @object
+BOOTSTATUS: .long       0x00000000
+
+# GDT
+
+GDT:
+gdt_start:
+    # Null descriptor (segment selector 0x00)
+    .quad       0x0000000000000000
+
+    # kernel code segment (segment selector 0x08)
+    .word       0xFFFF          # limit (size) about 200M
+    .word       0x0000          # memory start address, low 16 bits
+    .byte       0x00            # memory start address, middle 8 bytes
+    .byte       0x9A            # access byte
+    .byte       0xCF            # Flags 
+    .byte       0x00            # memory start address, high 8 bytes
+
+   # kernel data segment (segment selector 0x10)
+    .word       0xFFFF          # limit (size) about 200M
+    .word       0x0000          # memory start address, low 16 bits
+    .byte       0x00            # memory start address, middle 8 bytes
+    .byte       0x92            # access byte
+    .byte       0xC0            # Flags 
+    .byte       0x00            # memory start address, high 8 bytes
+
+   # user code segment (segment selector 0x18)
+    .word       0xFFFF          # limit (size) about 200M
+    .word       0x16C1          # memory start address, low 16 bits
+    .byte       0x00            # memory start address, middle 8 bytes
+    .byte       0xFA            # access byte
+    .byte       0xCF            # Flags 
+    .byte       0x00            # memory start address, high 8 bytes
+
+   # user data segment (segment selector 0x20)
+    .word       0xFFFF          # limit (size) about 200M
+    .word       0x16C1          # memory start address, low 16 bits
+    .byte       0x00            # memory start address, middle 8 bytes
+    .byte       0xF2            # access byte
+    .byte       0xCF            # Flags 
+    .byte       0x00            # memory start address, high 8 bytes
+
+    # Transaction State Segment (TSS) (segment selector 0x28)
+    .word       0x0068          # limit (size) about 200M
+    .word       0x12C1          # memory start address, low 16 bits
+    .byte       0x00            # memory start address, middle 8 bytes
+    .byte       0xF2            # access byte
+    .byte       0xCF            # Flags 
+    .byte       0x00            # memory start address, high 8 bytes
+gdt_end:
+
+    # pointer to GDT
+.global GDTP
+.type GDTP,@object
+GDTP:
+    .word gdt_end - gdt_start - 1   # size of GDT
+    .long gdt_start
+
+#	BBBBBB    SSSSSSSS  SSSSSSSS      
+#   BB    BB  SS        SS
+#	BBBBBB    SSSSSSSS  SSSSSSSS
+#	BB    BB        SS        SS
+#	BBBBBB    SSSSSSSS  SSSSSSSS
+
+.section .bss
+	.align 4096
+
 # Preallocate pages used for paging. Don't hard-code addresses and assume they
 # are available, as the bootloader might have loaded its multiboot structures or
 # modules there. This lets the bootloader know it must avoid the addresses.
-.section .bss
-	.align 4096
 
 .global page_directory
 .type page_directory, @object
 page_directory:
 	.skip 4096
-.global page_table_0000
-.type page_table_0000, @object
-page_table_0000:
+.global page_table_000
+.type page_table_000, @object
+page_table_000:
 .skip 4096
 
-.global page_table_C000
-.type page_table_C000, @object
-page_table_C000:
+.global page_table_C00
+.type page_table_C00, @object
+page_table_C00:
 	.skip 4096
 # Further page tables may be required if the kernel grows beyond 3 MiB.
+
