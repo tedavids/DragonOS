@@ -10,11 +10,15 @@ This is a 'play' project to create an OS from scratch
 
 ## TODOs
 
-* load the GDT
-* load a print function (kprintf - kernel formatted print)
-* load the IDT
-* set up the APIC
-* add a keyboard handler
+* Map 0x0-0xFFFF memory
+* Set up paging
+*   load multiboot to get memory size
+*   Set permissions correctly on existing memory (.text, .rodata, & Bios)
+*   create functions mapKernelPage, mapKernelROPage, mapUserPage,
+*       mapUserROPage, unmapPage
+*   Get clock working
+* Set up keyboard
+* Get commadn prompt
 
 ## 🛠️ Prerequisite
 
@@ -29,6 +33,9 @@ This is a 'play' project to create an OS from scratch
 ## Credits
 
 * so far just OSDev
+
+* OSDev contributors
+ Octocontrabass, sebihepp, and nullplan for their help getting to the Higher Half
 
 ## License 
 Disributed under GPL3 

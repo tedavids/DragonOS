@@ -44,14 +44,18 @@ _start:
 	out	%al, $0x21		# Mask all master PIC IRQs
 	out %al, $0xA1		# Mask all slave PIC IRQs
 
+	# save multiboot info
+    mov %ebx, (MULTIBOOT_INFO_ADDRESS - 0xC0000000)
+
 	# Physical address of page_table_C00.
 	movl $(page_table_C00 - 0xC0000000), %edi
 
 	# First address to map is address 0.
 	movl $0, %esi
 
-	# Map 1023 pages. The 1024th will be the VGA text buffer.
-	movl $1023, %ecx
+	# Map 1024 pages.  if the kernel gets longer add a page table after _C00
+	# and make this 2048
+	movl $1024, %ecx
 
 bootprocaddress:
 	# Only map the kernel.
@@ -98,6 +102,8 @@ krnlmapdone:
 	movl $(page_directory - 0xC0000000), %ecx
 	movl %ecx, %cr3
 
+	call MapPage0
+
 	# Enable paging and the write-protect bit.
 	movl %cr0, %ecx
 	orl $0x80010000, %ecx
@@ -107,6 +113,34 @@ krnlmapdone:
 	lea _start2, %ecx
 	jmp *%ecx
 
+	# This function maps the pages for the base 1M
+MapPage0:
+		# Physical address of page_table_C00.
+	movl $(page_table_000 - 0xc0000000) , %edi
+
+	# First address to map is address 0.
+	xor %esi, %esi
+
+	# Map 255 pages. just less than 0x100000
+	movl $256, %ecx
+
+proczeroaddress:
+
+	# Map physical address as "present, writable". Note that this maps
+	# the bios and as writable
+
+	movl %esi, %edx		# this is our address
+	orl $0x003, %edx	# set present and writable bits
+	movl %edx, (%edi)	# put it in the table
+
+# Size of page is 4096 bytes.
+	addl $4096, %esi	# Size of entries in page_table_000 is 4 bytes.
+	addl $4, %edi		# Loop to the next entry if we haven't finished.
+	loop proczeroaddress
+
+zeromapdone:
+
+	ret
 
 
 
@@ -123,7 +157,8 @@ _start2:
 	# At this point, paging is fully set up and enabled.
 
 	# Unmap the identity mapping as it is now unnecessary. 
-	movl $0, page_directory + 0
+	# replace with the identity mapping for the first meg
+	movl $(page_table_000 + 0x003), page_directory + 0
 
 	# Reload crc3 to force a TLB flush so the changes to take effect.
 	movl %cr3, %ecx
@@ -131,13 +166,6 @@ _start2:
 
 	# Set up the stack.
 	mov $stack_top, %esp
-
-# Unmap the identity mapping as it is now unnecessary. 
-	movl $0, page_directory + 0
-
-	# Reload crc3 to force a TLB flush so the changes to take effect.
-	movl %cr3, %ecx
-	movl %ecx, %cr3
 
 	# load the GDT
 
@@ -163,69 +191,46 @@ flush_CS:
     addl GDTLOADED, %eax
     movl %eax, BOOTSTATUS
 
-	# map page zero
-	call	MapPage0
 
 
-	# Enter the high-level kernel.  Interrupts are still
+
+	# Enter the high-level kernel.  Interrupts are stil
 	# supressed, you must call EnableInterrupts once the 
 	# IDT and APIC are set up
 
 	call kernel_main
 
 	# Infinite loop if the system has nothing more to do.
+
+bootloop:
 	cli
-1:	hlt
-	jmp 1b
-
-	# This function maps the pages for the base 1M
-MapPage0:
-		# Physical address of page_table_C00.
-	movl $page_table_000, %edi
-
-	# First address to map is address 0.
-	movl $0, %esi
-
-	# Map 255 pages. just less than 0x100000
-	movl $255, %ecx
-
-proczeroaddress:
-
-	# Only the first 1M
-	cmpl $0x100000, %esi
-	jge zeromapdone
-
-	# Map physical address as "present, writable". Note that this maps
-	# the bios and as writable
-
-	movl %esi, %edx		# this is our address
-	orl $0x003, %edx	# set present and writable bits
-	movl %edx, (%edi)	# put it in the table
-
-# Size of page is 4096 bytes.
-	addl $4096, %esi
-	# Size of entries in page_table_C00 is 4 bytes.
-	addl $4, %edi
-	# Loop to the next entry if we haven't finished.
-	loop proczeroaddress
-
-zeromapdone:
-# MapPage0
-	movl $page_table_000 + 0x003, page_directory + 0
-
-	ret
+	hlt
+	jmp bootloop
 
 
-.global DisableInterrupts
-.type DisableInterrupts, @function
-DisableInterrupts:
-	cli
-	ret
 
-.global EnableInterrupts
-.type EnableInterrupts, @function
-EnableInterrupts:
-	sti
+.global setIDT
+.type setIDT, @function
+#load the IDT 
+setIDT:
+    lidt [IDTP]
+    
+    sidt IDTR               # save for debugging
+
+    movl BOOTSTATUS, %eax
+    addl IDTLOADED, %eax
+    movl %eax, BOOTSTATUS
+
+    ret 
+
+	# Reload crc3 to force a TLB flush so the changes to take effect.
+.global FlushPageTable
+.type FlushPageTable, @function
+FlushPageTable:
+	push %ecx
+	movl %cr3, %ecx
+	movl %ecx, %cr3
+	pop %ecx
 	ret
 
 #	RRRRRR    OOOOOOOO  DDDDDD       A      TTTTTTTT      A
@@ -236,6 +241,20 @@ EnableInterrupts:
 
 .section .rodata
 .align 4096
+
+.global OSNAME
+.type OSNAME, @object
+OSNAME:	.asciz	"DragonOS"
+
+.global OSVERSION
+.type OSVERSION, @object
+OSVERSION:	.asciz	"0.0.0"
+
+.global OSDATE
+.type OSDATE, @object
+OSDATE:		.asciz	"2026-05-30"
+
+
 # BOOTSTATUS constants
 .global GDTLOADED
 .type GDTLOADED, @object
@@ -253,6 +272,16 @@ MEMMAPLOADED: .long 0x00000008
 .type PAGINGIMPLEMENTED, @object
 PAGINGIMPLEMENTED: .long 0x00000010
 
+.global KERNEL_CODE_SELECTOR, KERNEL_DATA_SELECTOR
+KERNEL_CODE_SELECTOR:    .word   0X08
+KERNEL_DATA_SELECTOR:    .word   0x10
+.global USER_CODE_SELECTOR, USER_DATA_SELECTOR
+USER_CODE_SELECTOR:      .word   0x18
+USER_DATA_SELECTOR:      .word   0x20
+.global TSS_SELECTOR
+TSS_SELECTOR:            .word   0x28
+
+
 #	DDDDDD        A      TTTTTTTT      A
 #   DD   DD      AAA        TT        AAA
 #   DD    DD    AA AA       TT       AA AA
@@ -262,8 +291,12 @@ PAGINGIMPLEMENTED: .long 0x00000010
 # Allocate the initial stack.
 .section .data
 .align 4096
+.global stack_bottom
+.type stack_bottom, @object
 stack_bottom:
 .skip 16384 # 16 KiB
+.global stack_top
+.type stack_top, @object
 stack_top:
 
 # boot status
@@ -325,6 +358,32 @@ gdt_end:
 GDTP:
     .word gdt_end - gdt_start - 1   # size of GDT
     .long gdt_start
+
+#interrupt descriptor table
+.align 8
+.type IDT, @object
+.GLOBAL IDT
+IDT: 
+.skip 2048
+idt_end:
+
+# pointer to IDT
+.align 8
+.GLOBAL IDTP
+.type IDTP, @object
+IDTP:
+    .word (idt_end - IDT - 1)
+    .long IDT
+
+#used for debugging
+.global IDTR
+.type IDTR,@object
+IDTR:	.word	0x0000
+		.long	0x00000000
+
+.global MULTIBOOT_INFO_ADDRESS
+.type MULTIBOOT_INFO_ADDRESS, @object
+MULTIBOOT_INFO_ADDRESS: .long  0x00000000
 
 #	BBBBBB    SSSSSSSS  SSSSSSSS      
 #   BB    BB  SS        SS

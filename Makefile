@@ -37,17 +37,17 @@ CFLAGS := $(CFLAGS) -ffreestanding -Wall -Wextra -pedantic -Wconversion -Wcast-a
 		 -Wredundant-decls -Wsign-conversion -Wswitch-default -Wundef -Wfloat-equal -Werror -fPIC
 CPPFLAGS := $(CPPFLAGS) -D__is_kernel -Iinclude -g
 LDFLAGS := $(LDFLAGS) -nostdlib -L$(LIBDIR) -Wl,-Map,output.map
-LIBS := $(LIBS) #-lkrnl -ltty -lc -lstdio -lintr -lgcc -lkbd -lcmd
+LIBS := $(LIBS) -lkrnl -ltty -lc -lstdio -lintr -lgcc -lkbd -lcmd
 
-LIB_LIST = 
-#$(LIBDIR)/libkrnl.a \
-#$(LIBDIR)/libtty.a \
-#$(LIBDIR)/libc.a \
-#$(LIBDIR)/libstdio.a \
-#$(LIBDIR)/libgcc.a \
-#$(LIBDIR)/libintr.a \
-#$(LIBDIR)/libkbd.a \
-#$(LIBDIR)/libcmd.a \
+LIB_LIST = \
+$(LIBDIR)/libkrnl.a \
+$(LIBDIR)/libtty.a \
+$(LIBDIR)/libc.a \
+$(LIBDIR)/libstdio.a \
+$(LIBDIR)/libgcc.a \
+$(LIBDIR)/libintr.a \
+$(LIBDIR)/libkbd.a \
+$(LIBDIR)/libcmd.a \
 
 
 ARCHDIR=arch/$(HOSTARCH)
@@ -145,9 +145,9 @@ clean:
 
 
 run:
-	qemu-system-i386 -kernel DragonOS.kernel -append "-kheap=1M" -d int -no-reboot
+	qemu-system-i386 -kernel DragonOS.kernel -append "-kheap=1M" -no-reboot -no-shutdown
 
 debug:
-	qemu-system-i386 -kernel DragonOS.kernel -append "-kheap=1M" -d int -no-reboot -s -S
+	qemu-system-i386 -kernel DragonOS.kernel -append "-kheap=1M" -no-reboot -s -S
 
 -include $(OBJS:.o=.d)
