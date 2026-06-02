@@ -14,11 +14,9 @@ This is a 'play' project to create an OS from scratch
 * Set up paging
 *   load multiboot to get memory size
 *   Set permissions correctly on existing memory (.text, .rodata, & Bios)
-*   create functions mapKernelPage, mapKernelROPage, mapUserPage,
-*       mapUserROPage, unmapPage
-*   Get clock working
-* Set up keyboard
-* Get commadn prompt
+*   create functions mapKernelPage, mapKernelROPage, mapUserPage, mapUserROPage, unmapPage
+* set up heap processing
+
 
 ## 🛠️ Prerequisite
 

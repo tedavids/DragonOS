@@ -30,6 +30,46 @@
 #include <multibootinfo.h>
 
 #include <kernel.h>
+
+char *getCommand(char* restrict buffer, size_t size) {
+    // check parameters
+    if (!buffer) return nullptr;
+    if (!size) return nullptr;
+
+    uint16_t key = 0;
+    size_t cmdidx = 0;
+    char ascii = 0;
+
+    // wait for a key (if necessary)
+    while (kbdBufferEmpty());
+
+    // do until we get to the end of the command (enter) or ESC is pressed
+    // minus 2 because we need space for eh null
+    while ((((char)key != '\n') && ((char)key != KBD_KEY_ESC)) && (cmdidx < (size -2))) {
+        key = kbdGetKey();
+        ascii = (char) key;
+        // if its valid ascii (ignore control chars kinda)) TODO: make more bulletproof
+        if ((ascii < 127) && (ascii > 0)) {
+            printf("%c",ascii);
+            buffer[cmdidx++] = ascii;
+        }
+
+        // do we wait for the next key
+        if ((ascii != '\n') && (ascii != KBD_KEY_ESC) && (cmdidx < (size -2))) {
+            while (kbdBufferEmpty());
+        }
+    }
+    // terminate
+    if (ascii != KBD_KEY_ESC) {
+        buffer[cmdidx] = '\0';
+    } else {
+        buffer[0] = (char) key;
+        buffer[1] = '\0';
+    }
+
+    return buffer;
+}
+
 void kernel_main() {
 
     // init display 
@@ -77,7 +117,7 @@ void kernel_main() {
     printf("Turning on interrupts...");
     EnableInterrupts();
     printf("Done\n\r");
-/**/
+/*
     // Multiboot info
     printf("Loading multiboot info...");
     if (!loadMultibootInfo()) {
@@ -90,6 +130,40 @@ void kernel_main() {
     printf("Multiboot memory: %s\n\r",MULTIBOOT_MEMORY_AVAILABLE);
 */
 
+    // Initializing keyboard
+    printf("Initialization keyboard...");
+    if (!initKbd()) {
+        printf("Failed\n\r");
+        abort();
+    }
+    printf("Success\n\r");
+
+    // system clock
+    rtime_t time = read_system_clock();
+    printf("Time: %uw/%ub/%ub %ub:%ub:%ub\n\r",
+        time.year, time.month, time.day, time.hour, time.minute, time.second);
+    
+
+    // test timer
+    uint64_t ticks = getTicks();
+    printf("APIC timer ticks: 0x%xq\n\r",ticks);
+    ticks = getTicks();
+    printf("APIC timer ticks: 0x%xq\n\r",ticks);
+
+    char command[256];
+
+    int rtncde = 0;
+    while (command[0] != KBD_KEY_ESC) {
+        printf("Command> ");
+        if (getCommand(command, sizeof(command))) {
+            printf("\r");
+            // TODO: process command
+            printf("Return code: %iw\n\r", rtncde);
+        }
+
+    }
+    printf("Kernel end");
+    
     // this is the end of the kernel
     while (true) {
         counter++;
