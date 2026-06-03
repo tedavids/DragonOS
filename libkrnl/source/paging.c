@@ -1,6 +1,6 @@
 // paging.c -- intialize paging
 #include <kernel.h>
-#include <multibootinfo.h>
+#include <multiboot.h>
 #include <stdio.h>
 #include <interupt.h>
 #include <paging.h>
@@ -158,9 +158,9 @@ void postBootPageInit() {
     // get the kernel end on a page boundty (global variable)
     // kernel_heap_start = ALIGN_4K(((uint32_t) (&_kernel_end)));
 
-    for (uint16_t i = 0; i < MMAP_AVAIL_COUNT; i++) {
-        uint32_t startaddress = MMAP_AVAIL_MEM[i].addr;
-        uint32_t endaddress = startaddress + MMAP_AVAIL_MEM[i].len;
+    for (uint16_t i = 0; i < multiboot_info.mmap.count; i++) {
+        uint32_t startaddress = (uint32_t) multiboot_info.mmap.region[i].baseaddr;
+        uint32_t endaddress = startaddress + (uint32_t) multiboot_info.mmap.region[i].end;
 
         mapMemoryRange(table, &tableidx, &ptecounter, startaddress, endaddress);
     }

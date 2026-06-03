@@ -99,7 +99,7 @@ $(ISO) : $(TARGET)
 
 $(TARGET): $(OBJS) $(LIB_LIST) $(ARCHDIR)/linker.ld 
 	$(LD) -T $(ARCHDIR)/linker.ld -o $@ $(CFLAGS) -Wl,--start-group $(LINK_LIST) -Wl,--end-group 
-	grub2-file --is-x86-multiboot DragonOS.kernel 
+	grub2-file --is-x86-multiboot2 DragonOS.kernel 
 
 # libraries (do nothing they were changed)
 $(LIBDIR)/libkrnl.a : ;
@@ -145,9 +145,9 @@ clean:
 
 
 run:
-	qemu-system-i386 -kernel DragonOS.kernel -append "-kheap=1M" -no-reboot -no-shutdown
+	qemu-system-i386 -cdrom DragonOS.iso -no-reboot -no-shutdown
 
 debug:
-	qemu-system-i386 -kernel DragonOS.kernel -append "-kheap=1M" -no-reboot -s -S
+	qemu-system-i386 -cdrom DragonOS.iso -no-reboot -s -S
 
 -include $(OBJS:.o=.d)

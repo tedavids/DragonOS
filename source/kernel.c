@@ -27,7 +27,7 @@
 #include <time.h>
 #include <interupt.h>
 #include <paging.h>
-#include <multibootinfo.h>
+#include <multiboot.h>
 
 #include <kernel.h>
 
@@ -117,7 +117,7 @@ void kernel_main() {
     printf("Turning on interrupts...");
     EnableInterrupts();
     printf("Done\n\r");
-/*
+
     // Multiboot info
     printf("Loading multiboot info...");
     if (!loadMultibootInfo()) {
@@ -126,9 +126,14 @@ void kernel_main() {
     }
     printf("Success\n\r");
 
-    printf("Command line: %s\n\r", MULTIBOOT_CMDLINE);
-    printf("Multiboot memory: %s\n\r",MULTIBOOT_MEMORY_AVAILABLE);
-*/
+    //printf("Command line: %s\n\r", MULTIBOOT_CMDLINE); TODO: come back and get this after paging is set up
+    printf("Low memory: 0x%xl\n\r",multiboot_info.meminfo.lower);
+    printf("Total Memory: 0x%xl\n\r",multiboot_info.meminfo.upper);
+    printf("Physical memory map (%ul):\n\r",multiboot_info.mmap.count);
+    for (int i = 0; i < (int) multiboot_info.mmap.count; i++) {
+        printf("%iw: Begin: 0x%Xq End: 0x%Xq Type: %ul\n\r",i, multiboot_info.mmap.region[i].baseaddr, 
+            multiboot_info.mmap.region[i].end, multiboot_info.mmap.region[i].type);
+    }
 
     // Initializing keyboard
     printf("Initialization keyboard...");
@@ -146,9 +151,9 @@ void kernel_main() {
 
     // test timer
     uint64_t ticks = getTicks();
-    printf("APIC timer ticks: 0x%xq\n\r",ticks);
+    printf("APIC timer ticks: %uq\n\r",ticks);
     ticks = getTicks();
-    printf("APIC timer ticks: 0x%xq\n\r",ticks);
+    printf("APIC timer ticks: %uq\n\r",ticks);
 
     char command[256];
 
@@ -163,7 +168,7 @@ void kernel_main() {
 
     }
     printf("Kernel end");
-    
+
     // this is the end of the kernel
     while (true) {
         counter++;

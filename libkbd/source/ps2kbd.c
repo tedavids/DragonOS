@@ -886,7 +886,7 @@ bool initKbd() {
     // add idt entry to table
 
     if (!idt_set_gate(IDT_KEYBORD_INTERRUPT, (uint32_t) &kbd_handler,  KERNEL_CODE_SELECTOR, 
-                 IDT_PRIVLEDGE_KERNEL, IDT_GATE_TYPE_INTERRUPT32)) {
+                 IDT_PRIVLEDGE_KERNEL, IDT_GATE_TYPE_INTERRUPT32, false)) {
         printf("Failed to set keyboard interrupt\r\n");
         return false;
     }

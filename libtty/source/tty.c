@@ -11,7 +11,7 @@
 #include <vga.h>
 
 
-static uint16_t* VGA_MEMORY = (uint16_t*) (uint16_t*) 0xc03ff000; //0xB8000;
+static uint16_t* VGA_MEMORY = (uint16_t*) (uint16_t*) 0xB8000; // 0xc03ff000;
 
 
 static enum vga_color terminal_color;

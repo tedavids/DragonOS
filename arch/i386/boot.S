@@ -19,15 +19,53 @@
 .set ALIGN,    1<<0             # align loaded modules on page boundaries
 .set MEMINFO,  1<<1             # provide memory map
 .set FLAGS,    ALIGN | MEMINFO  # this is the Multiboot 'flag' field
-.set MAGIC,    0x1BADB002       # 'magic number' lets bootloader find the header
-.set CHECKSUM, -(MAGIC + FLAGS) # checksum of above, to prove we are multiboot
+.set MAGIC1,    0x1BADB002       # 'magic number' lets bootloader find the header (multiboot1)
+.set MAGIC2,    0xE85250D6	 	# 'magic number' for multiboot 2
+.set CHECKSUM1, -(MAGIC1 + FLAGS) # checksum of above, to prove we are multiboot
 
 # Declare a multiboot header that marks the program as a kernel.
+#.section .multiboot.data, "aw"
+#.align 4
+#.long MAGIC1
+#.long FLAGS
+#.long CHECKSUM1
+
+# Multiboot 2 header
 .section .multiboot.data, "aw"
-.align 4
-.long MAGIC
-.long FLAGS
-.long CHECKSUM
+.align 8
+
+multiboot2:
+#general multiboot 2 header
+.long MAGIC2											# Multiboot 2 magic number
+.long 0x0												# Architecture (0 = i386)
+.long (multiboot2_end - multiboot2)						# header length
+.long -(0xE85250D6 + 0 + (multiboot2_end - multiboot2))  # checksum
+.long 0x0												# type
+.long 0x0												# Flags
+.long 0x8												# size
+
+.align 8
+# tag 1 general info
+multiboot2_info_request_tag:
+.long 0x1												# General info
+.long 0													# required or optional (0 = optional)
+.long multiboot2_info_request_end - multiboot2_info_request_tag # size of section
+.long 1													# command line 
+.long 2													# bootloader Name
+.long 4													# memory sizes
+.long 5													# bios boot device
+.long 6													# memory map 
+multiboot2_info_request_end:
+
+.align 8
+# the end of the tag list
+multiboot2_end_tag:
+.long 0													# type
+.long 0													# Flags
+.long multiboot2_end_end - multiboot2_end_tag			# size
+multiboot2_end_end:
+
+multiboot2_end:
 
 # The kernel entry point.
 # This will do the initial switch to virtual address space
@@ -35,6 +73,16 @@
 .global _start
 .type _start, @function
 _start:
+	# make sure boot is ok
+	cmp $MAGIC2, %eax
+	jne boot
+badboot:
+	cli
+	hlt
+	jmp badboot
+
+boot:
+
 	# inhibit interrupts until the APIC is set up
 	cli
 
@@ -85,7 +133,7 @@ loadaddress:
 .global krnlmapdone
 krnlmapdone:
 	# Map VGA video memory to 0xC03FF000 as "present, writable".
-	movl $(0x000B8000 | 0x003), page_table_C00 - 0xC0000000 + 1023 * 4
+	#movl $(0x000B8000 | 0x003), page_table_C00 - 0xC0000000 + 1023 * 4
 
 	# The page table is used at both page directory entry 0 (virtually from 0x0
 	# to 0x3FFFFF) (thus identity mapping the kernel) and page directory entry
@@ -121,8 +169,9 @@ MapPage0:
 	# First address to map is address 0.
 	xor %esi, %esi
 
-	# Map 255 pages. just less than 0x100000
-	movl $256, %ecx
+	# Map the first 4 megs because we don't 
+	# know where the multiboot info will be
+	movl $1024, %ecx
 
 proczeroaddress:
 
@@ -158,7 +207,7 @@ _start2:
 
 	# Unmap the identity mapping as it is now unnecessary. 
 	# replace with the identity mapping for the first meg
-	movl $(page_table_000 + 0x003), page_directory + 0
+	movl $((page_table_000 - 0xC0000000) + 0x003), page_directory + 0
 
 	# Reload crc3 to force a TLB flush so the changes to take effect.
 	movl %cr3, %ecx

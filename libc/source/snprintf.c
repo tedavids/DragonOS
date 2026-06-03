@@ -29,6 +29,7 @@ int printHexLower(char* restrict buff, size_t buffsize, size_t *buffptr, const c
 
     // buffer used for all hex
     char hexbuffer[20];
+    memset(hexbuffer,0,sizeof(hexbuffer));
 
     int count = 0;
 
@@ -60,7 +61,7 @@ int printHexLower(char* restrict buff, size_t buffsize, size_t *buffptr, const c
                 copystring(buff, buffsize, buffptr, hexbuffer);
             break;
         }
-        case 'x': {
+        case 'q': {
             // valid consume the character
             *formatptr += 1;
             uint64_t val = (uint64_t) va_arg((*parameters), uint64_t);
@@ -81,6 +82,7 @@ int printHexUpper(char* restrict buff, size_t buffsize, size_t *buffptr, const c
     // assumes formatptr is on next char
     // buffer used for all hex
     char hexbuffer[20];
+    memset(hexbuffer,0,sizeof(hexbuffer));
 
     int count = 0;
 

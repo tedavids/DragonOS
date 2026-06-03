@@ -17,8 +17,8 @@ AS=i686-elf-gcc
 LD=i686-elf-gcc
 
 #initail flags
-CFLAGS ?= -O2 -ggdb
-#CFLAGS ?= -g
+#CFLAGS ?= -O2 -ggdb
+CFLAGS ?= -g
 CPPFLAGS ?=
 LDFLAGS ?= 
 LIBS ?=
