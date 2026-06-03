@@ -10,9 +10,8 @@ This is a 'play' project to create an OS from scratch
 
 ## TODOs
 
-* Map 0x0-0xFFFF memory
 * Set up paging
-*   load multiboot to get memory size
+*   create bit arrays from my memory map showing available and allocated memory and which is read only
 *   Set permissions correctly on existing memory (.text, .rodata, & Bios)
 *   create functions mapKernelPage, mapKernelROPage, mapUserPage, mapUserROPage, unmapPage
 * set up heap processing
