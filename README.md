@@ -15,8 +15,6 @@ This is a 'play' project to create an OS from scratch
 ## TODOs
 
 * Set up paging
-*   create bit arrays from my memory map showing available and allocated memory and which is read only
-*   Set permissions correctly on existing memory (.text, .rodata, & Bios)
 *   create functions mapKernelPage, mapKernelROPage, mapUserPage, mapUserROPage, unmapPage, 
 *       setPageReadOnly, setPageReadWrite
 * set up heap processing
