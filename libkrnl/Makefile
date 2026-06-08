@@ -44,6 +44,7 @@ $(OBJDIR)/multiboot.o \
 $(OBJDIR)/paging.o \
 $(OBJDIR)/time.o \
 $(OBJDIR)/heap.o \
+$(OBJDIR)/bitarray.o \
 
 HOSTEDOBJS = \
 
@@ -77,6 +78,9 @@ $(OBJDIR)/time.o : $(SRCDIR)/time.c
 	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
 
 $(OBJDIR)/heap.o : $(SRCDIR)/heap.c
+	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
+
+$(OBJDIR)/bitarray.o : $(SRCDIR)/bitarray.c
 	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
 
 clean:

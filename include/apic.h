@@ -16,7 +16,7 @@ extern volatile uint64_t ticks;
 
 extern void int32_handler(); 
 
-extern bool APIC();
+extern bool initAPIC();
 extern uint64_t getTicks();
 extern bool initAPICtimer();
 extern void clearAPICInterrupts();

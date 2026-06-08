@@ -461,4 +461,5 @@ page_table_000:
 page_table_C00:
 	.skip 4096
 # Further page tables may be required if the kernel grows beyond 3 MiB.
-
+# you will also have to update paging.c functions initPDTVirtPhys() &
+# dltPDTEntry()
