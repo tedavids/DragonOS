@@ -89,7 +89,7 @@ void buildMMAP(const struct tag_mmap_t* const mmap) {
     for (int i = 0; i < (int) multiboot_info.mmap.count; i++) {
         multiboot_info.mmap.region[i].baseaddr = mmap->entry[i].baseaddr;
         // memory is 0 based, length is 1 based so subtract 1
-        multiboot_info.mmap.region[i].end = mmap->entry[i].baseaddr + 
+        multiboot_info.mmap.region[i].endaddr = mmap->entry[i].baseaddr + 
             mmap->entry[i].len - 1;
         multiboot_info.mmap.region[i].type = mmap->entry[i].type;
     }
@@ -145,9 +145,9 @@ bool loadMultibootInfo() {
     // fix memory map entry that is at the end of physical memory
     for (int i = 0; i < (int) multiboot_info.mmap.count; i++) {
         if (multiboot_info.mmap.region[i].baseaddr < multiboot_info.meminfo.upper) {
-            if (multiboot_info.mmap.region[i].end > multiboot_info.meminfo.upper) {
+            if (multiboot_info.mmap.region[i].endaddr > multiboot_info.meminfo.upper) {
                 // remember addesses are 0 based, lengths are 1 based
-                multiboot_info.mmap.region[i].end = multiboot_info.meminfo.upper - 1;
+                multiboot_info.mmap.region[i].endaddr = multiboot_info.meminfo.upper - 1;
             }
         }
     }

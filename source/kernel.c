@@ -89,8 +89,11 @@ void kernel_main() {
 
     //  print name they can read while I do other stuff
     printf("%s Version: %s Date: %s\n\r",&OSNAME,&OSVERSION,&OSDATE);
-    uint64_t counter = 0;
 
+   // system clock
+    rtime_t time = read_system_clock();
+    printf("Time: %uw/%ub/%ub %ub:%ub:%ub\n\r",
+        time.year, time.month, time.day, time.hour, time.minute, time.second);
 
     printf("Boot Status: 0x%xl\r\n",BOOTSTATUS);
 
@@ -126,35 +129,29 @@ void kernel_main() {
     }
     printf("Success\n\r");
 
-    //printf("Command line: %s\n\r", MULTIBOOT_CMDLINE); TODO: come back and get this after paging is set up
-    printf("Low memory: 0x%xl\n\r",multiboot_info.meminfo.lower);
+    printf("Parameters: %s\n\r", multiboot_info.cmdline);
+
     printf("Total Memory: 0x%xl\n\r",multiboot_info.meminfo.upper);
-    printf("Physical memory map (%ul):\n\r",multiboot_info.mmap.count);
-    for (int i = 0; i < (int) multiboot_info.mmap.count; i++) {
-        printf("%iw: Begin: 0x%Xq End: 0x%Xq Type: %ul\n\r",i, multiboot_info.mmap.region[i].baseaddr, 
-            multiboot_info.mmap.region[i].end, multiboot_info.mmap.region[i].type);
+
+    // initialize paging
+    printf("Initializing paging...");
+    if (!initPaging()) {
+        printf("Failed\n\r");
+        abort();
     }
+    printf("Success\n\r");
+
 
     // Initializing keyboard
-    printf("Initialization keyboard...");
+    printf("Initializing keyboard...");
     if (!initKbd()) {
         printf("Failed\n\r");
         abort();
     }
     printf("Success\n\r");
 
-    // system clock
-    rtime_t time = read_system_clock();
-    printf("Time: %uw/%ub/%ub %ub:%ub:%ub\n\r",
-        time.year, time.month, time.day, time.hour, time.minute, time.second);
-    
 
-    // test timer
-    uint64_t ticks = getTicks();
-    printf("APIC timer ticks: %uq\n\r",ticks);
-    ticks = getTicks();
-    printf("APIC timer ticks: %uq\n\r",ticks);
-
+    // command loop
     char command[256];
 
     int rtncde = 0;
@@ -170,8 +167,7 @@ void kernel_main() {
     printf("Kernel end");
 
     // this is the end of the kernel
-    while (true) {
-        counter++;
-    }
+
+    while (true);
 
 }

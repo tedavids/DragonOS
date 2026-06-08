@@ -15,7 +15,7 @@ static uint16_t* VGA_MEMORY = (uint16_t*) (uint16_t*) 0xB8000; // 0xc03ff000;
 
 
 static enum vga_color terminal_color;
-static uint16_t* terminal_buffer;
+static uint16_t *terminal_buffer;
 
 bool terminal_initialize(void) 
 {
@@ -82,7 +82,10 @@ bool terminal_putentryat(unsigned char c, uint8_t color, struct cursor_pos_t* cu
     validate80x25Cursor(cursorpos, true);
 
     // write the character
-    terminal_buffer[cursorpostolineal(*cursorpos)] = crtVGAText(c, color);
+    uint16_t offset = cursorpostolineal(*cursorpos);
+    uint16_t text = crtVGAText(c, color);
+    terminal_buffer[offset] = text;
+    text += 0;
     // keep cursor the right place
     return move80x25CursorRight(cursorpos, true);
 

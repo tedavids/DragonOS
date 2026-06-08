@@ -148,6 +148,6 @@ run:
 	qemu-system-i386 -cdrom DragonOS.iso -no-reboot -no-shutdown
 
 debug:
-	qemu-system-i386 -cdrom DragonOS.iso -no-reboot -s -S
+	qemu-system-i386 -cdrom DragonOS.iso -no-reboot -no-shutdown -s -S
 
 -include $(OBJS:.o=.d)

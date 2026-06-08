@@ -6,14 +6,19 @@ This is a 'play' project to create an OS from scratch
 * Uses GRUB2 to load, using Multiboot
 * loads the page direcory table, and page entry tables with the kernel addresses
 * switches to virtual mode
-* should call kernel_main
+* calls kernel_main
+* kernel main does the following:
+*   Inits the display, loads the IDT, sets up the APIC Timer, sets up a memory map,
+*   initializes pageing, and the keyboard
+* Finaly drops info the kernel shell
 
 ## TODOs
 
 * Set up paging
 *   create bit arrays from my memory map showing available and allocated memory and which is read only
 *   Set permissions correctly on existing memory (.text, .rodata, & Bios)
-*   create functions mapKernelPage, mapKernelROPage, mapUserPage, mapUserROPage, unmapPage
+*   create functions mapKernelPage, mapKernelROPage, mapUserPage, mapUserROPage, unmapPage, 
+*       setPageReadOnly, setPageReadWrite
 * set up heap processing
 
 

@@ -4,6 +4,8 @@
 #define _PAGING_H
 
 #include <stdint.h>
+#include <stdbool.h>
+
 
 typedef uint32_t pte_t;         // page table entry
 typedef uint32_t pde_t;         // page directory entry
@@ -24,4 +26,6 @@ extern struct page_table_t      *kernel_page_table;
 extern void                     postBootPageInit();
 
 extern void                     FlushPageTable();
+
+extern                          bool initPaging();
 #endif
