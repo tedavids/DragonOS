@@ -15,9 +15,11 @@ This is a 'play' project to create an OS from scratch
 ## TODOs
 
 * Set up paging
-*   create functions mapKernelPage, mapKernelROPage, mapUserPage, mapUserROPage, unmapPage, 
+*   create functions mapKernelPage, mapUserPage, unmapPage, 
 *       setPageReadOnly, setPageReadWrite
 * set up heap processing
+* change my invalidatePage function in paging.c to do a TLB shootdown, prep for multiprocessor
+
 
 
 ## 🛠️ Prerequisite

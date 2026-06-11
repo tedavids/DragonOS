@@ -28,6 +28,7 @@
 #include <interupt.h>
 #include <paging.h>
 #include <multiboot.h>
+#include <docmd.h>
 
 #include <kernel.h>
 
@@ -141,6 +142,35 @@ void kernel_main() {
     }
     printf("Success\n\r");
 
+    // test paging functions here
+
+    uint32_t physpage;
+    uint32_t address = (uint32_t) mapKernelPage(0xC0158000, &physpage);
+
+    printf("Successfully mapped page: 0x%Xl with physical address: 0x%Xl\n\r",
+            address, physpage);
+
+    printf("Testing Read only...");
+    if (setPageReadOnly(address)) {
+        printf("Success\n\r");
+    } else {
+        printf("Failed\n\r");
+    }
+
+
+    printf("Testing Read/write only...");
+    if (setPageReadWrite(address)) {
+        printf("Success\n\r");
+    } else {
+        printf("Failed\n\r");
+    }
+
+    printf("Page 0x%Xl ", address);
+    if (!unmapPage(address)) {
+        printf("not unmapped\n\r");
+    } else {
+        printf("unmapped\n\r");
+    }
 
     // Initializing keyboard
     printf("Initializing keyboard...");
@@ -159,7 +189,7 @@ void kernel_main() {
         printf("Command> ");
         if (getCommand(command, sizeof(command))) {
             printf("\r");
-            // TODO: process command
+            rtncde = doCommand(command);
             printf("Return code: %iw\n\r", rtncde);
         }
 

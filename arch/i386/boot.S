@@ -145,6 +145,11 @@ krnlmapdone:
 	# Map the page table to both virtual addresses 0x00000000 and 0xC0000000.
 	movl $(page_table_C00 - 0xC0000000 + 0x003), page_directory - 0xC0000000 + 0
 	movl $(page_table_C00 - 0xC0000000 + 0x003), page_directory - 0xC0000000 + 768 * 4
+	
+	# to make things easier we will map 12M for the kernel in advance
+	movl $(page_table_C04 - 0xC0000000 + 0x003), page_directory - 0xC0000000 + 769 * 4
+	movl $(page_table_C04 - 0xC0000000 + 0x003), page_directory - 0xC0000000 + 770 * 4
+
 
 	# Set cr3 to the address of the page_directory.
 	movl $(page_directory - 0xC0000000), %ecx
@@ -459,6 +464,12 @@ page_table_000:
 .global page_table_C00
 .type page_table_C00, @object
 page_table_C00:
+	.skip 4096
+	.global page_table_C00
+.type page_table_C00, @object
+page_table_C04:
+	.skip 4096
+page_table_C08:
 	.skip 4096
 # Further page tables may be required if the kernel grows beyond 3 MiB.
 # you will also have to update paging.c functions initPDTVirtPhys() &
