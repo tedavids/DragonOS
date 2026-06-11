@@ -6,6 +6,18 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+
+typedef uint32_t pte_t;         // page table entry
+typedef uint32_t pde_t;         // page directory entry
+
+struct page_directory_t {
+    pde_t direntry[1024];
+};
+
+struct page_table_t {
+    pte_t pte[1024];
+};
+
 extern const uint32_t           PAGINGIMPLEMENTED;
 extern uint32_t                 kernel_heap_end;
 extern uint32_t                 kernel_heap_start;             // end of the kernel (beginning of the heap)

@@ -171,6 +171,8 @@ void kernel_main() {
     } else {
         printf("unmapped\n\r");
     }
+    printf("Success\n\r");
+
 
     // Initializing keyboard
     printf("Initializing keyboard...");
