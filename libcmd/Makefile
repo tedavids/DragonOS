@@ -37,6 +37,7 @@ LIBTTY_CFLAGS := $(LIBTTY_CFLAGS) $(ARCH_CFLAGS)
 LIBTTY_CPPFLAGS := $(LIBTTY_CPPFLAGS) $(ARCH_CPPFLAGS)
 
 FREEOBJS=$(OBJDIR)/dump.o \
+$(OBJDIR)/docmd.o \
 
 HOSTEDOBJS = \
 
@@ -54,6 +55,9 @@ $(DESTDIR)/$(TARGET) : $(OBJS)
 	$(AR) rcs $@ $(OBJS)
 
 $(OBJDIR)/dump.o : $(SRCDIR)/dump.c
+	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
+
+$(OBJDIR)/docmd.o : $(SRCDIR)/docmd.c
 	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
 
 clean:
