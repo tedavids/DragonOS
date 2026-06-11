@@ -14,10 +14,10 @@ This is a 'play' project to create an OS from scratch
 
 ## TODOs
 
-* Set up paging
-*   create functions mapKernelPage, mapKernelROPage, mapUserPage, mapUserROPage, unmapPage, 
-*       setPageReadOnly, setPageReadWrite
 * set up heap processing
+*   kmalloc/kfree
+* create swap file system
+* fix screen scrolling to do page up
 
 
 ## 🛠️ Prerequisite
