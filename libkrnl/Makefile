@@ -45,6 +45,7 @@ $(OBJDIR)/paging.o \
 $(OBJDIR)/time.o \
 $(OBJDIR)/heap.o \
 $(OBJDIR)/bitarray.o \
+$(OBJDIR)/registers.o \
 
 HOSTEDOBJS = \
 
@@ -81,6 +82,9 @@ $(OBJDIR)/heap.o : $(SRCDIR)/heap.c
 	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
 
 $(OBJDIR)/bitarray.o : $(SRCDIR)/bitarray.c
+	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
+
+$(OBJDIR)/registers.o : $(SRCDIR)/registers.c
 	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
 
 clean:

@@ -15,8 +15,9 @@ This is a 'play' project to create an OS from scratch
 ## TODOs
 
 * set up heap processing
-*   kmalloc/kfree
+-   kmalloc/kfree
 * create swap file system
+* determine which file system to support (FAT32, ext4?)
 * fix screen scrolling to do page up
 
 

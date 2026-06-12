@@ -136,7 +136,7 @@ void setTail(uint32_t offset) {
     }
     // head is behind tail
     if (pmmHead < pmmTail) {
-        if (offset < pmmTail) {
+        if (offset > pmmTail) {
             pmmTail = offset;
             return;
         }
@@ -485,7 +485,7 @@ bool initPhysicalMemoryManager() {
 }
 // Page Directory functions
 
-void initPDTVirtPhys() {
+bool initPDTVirtPhys() {
     // first meg
     PDTVirtPhys[0].physicalAddr = (uint32_t) (&page_table_000 - 0xC0000000);
     PDTVirtPhys[0].virtualAddr = (uint32_t) &page_table_000;
@@ -495,6 +495,7 @@ void initPDTVirtPhys() {
     PDTVirtPhys[768].virtualAddr = (uint32_t) &page_table_C00;
 
     // all others will need to be added via the putPDTEntry function
+    bool rtncde = true;
 
     // extended BIOS data area (0x80000-0x9FFFF)
     // pages 0x80-0x9F
@@ -524,7 +525,6 @@ void initPDTVirtPhys() {
     for (size_t i = ((uint32_t)&_text_start)/0x1000; i <= ((uint32_t)&_text_end)/0x1000; i++) {
         rtncde &= clearBit(readwriteMap, (sizeof(readwriteMap)*8), i, nullptr);
     }
-
 
     // .rodata
     for (size_t i = ((uint32_t)&_rodata_start)/0x1000; i <= ((uint32_t)&_rodata_end)/0x1000; i++) {

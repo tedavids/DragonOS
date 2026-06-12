@@ -24,7 +24,7 @@ LDFLAGS ?=
 LIBS ?=
 
 #add my flags
-CFLAGS := $(CFLAGS) -ffreestanding -Wall -Wextra -pedantic -Wconversion -Wcast-align -Wcast-qual \
+CFLAGS := $(CFLAGS) -std=gnu23 -ffreestanding -Wall -Wextra -pedantic -Wconversion -Wcast-align -Wcast-qual \
 		 -Wredundant-decls -Wsign-conversion -Wswitch-default -Wundef -Wfloat-equal -Werror -fPIC
 CPPFLAGS := $(CPPFLAGS) -D__is_libtty -isystem ../include 
 LDFLAGS := $(LDFLAGS) -nostdlib  -Wl,-Map,output.map
@@ -37,6 +37,8 @@ LIBTTY_CFLAGS := $(LIBTTY_CFLAGS) $(ARCH_CFLAGS)
 LIBTTY_CPPFLAGS := $(LIBTTY_CPPFLAGS) $(ARCH_CPPFLAGS)
 
 FREEOBJS=$(OBJDIR)/dump.o \
+$(OBJDIR)/docmd.o \
+$(OBJDIR)/mmap.o \
 
 HOSTEDOBJS = \
 
@@ -54,6 +56,12 @@ $(DESTDIR)/$(TARGET) : $(OBJS)
 	$(AR) rcs $@ $(OBJS)
 
 $(OBJDIR)/dump.o : $(SRCDIR)/dump.c
+	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
+
+$(OBJDIR)/docmd.o : $(SRCDIR)/docmd.c
+	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
+
+$(OBJDIR)/mmap.o : $(SRCDIR)/mmap.c
 	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
 
 clean:
