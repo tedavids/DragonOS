@@ -15,15 +15,15 @@ This is a 'play' project to create an OS from scratch
 ## TODOs
 
 * set up heap processing
--   kmalloc/kfree
+  -   for allocations a page or more
 * create power down command (shutdown)
 * create swap file system
 * determine which file system to support (FAT32, ext4?)
 * multi-threading
 * fix screen scrolling to do page up
 * Heap Additions
-- Add preallocated pages
-- expose all stats
+  - Add preallocated pages
+  - expose all stats
 
 
 ## 🛠️ Prerequisite
