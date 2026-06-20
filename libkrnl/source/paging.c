@@ -234,8 +234,6 @@ uint32_t mapPage(uint32_t address, uint32_t physpageoffset,
         // invalidate the page
         invalidatePage((uint32_t *) (physpageoffset << 12));
 
-        setTail(physpageoffset);
-
         return address;
     } else {
         // TODO: get page from heap once we have one
@@ -280,6 +278,9 @@ bool unmapPage(uint32_t address) {
 
     // invalidate the page
     invalidatePage((uint32_t *) (physaddroffset << 12));
+
+    // return page to free list
+    setTail(physaddroffset);
 
     return true;
 }
@@ -434,7 +435,11 @@ uint32_t getNextKernelAddr() {
     while (pde < 1024) {
         // check page table entries for an available address
         if (page_directory[pde]) {
-            uint32_t *pt = (uint32_t *) page_directory[pde];
+            // remove the read/write/present info and make an address
+            uint32_t *pt = (uint32_t *)((((uint32_t) page_directory[pde]) >> 12) << 12);
+            // now get the virtual address corresponding to the page table entry
+            pt = (uint32_t *)((unsigned char *) pt + 0xC0000000);
+
             //scan for an address
             while (pte < 1024)  {
                 if (!pt[pte]) {
@@ -478,7 +483,7 @@ void *mapKernelPage(uint32_t address, uint32_t *physaddr) {
 
 bool initPhysicalMemoryManager() {
     // set head and tail of our circular available buffer
-    pmmTail = multiboot_info.meminfo.upper;
+    pmmTail = (multiboot_info.meminfo.upper >> 12) - 1;
     pmmHead = pmmLowPage;
 
     return true;

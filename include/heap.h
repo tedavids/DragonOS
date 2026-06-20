@@ -3,8 +3,21 @@
 #ifndef _HEAP_H
 #define _HEAP_H
 
-extern void initHeap();
-extern void* krealloc(void* ptr, size_t newsize); // must be the address passed by malloc
-extern void* kcalloc(size_t elements, size_t elemsize);
+#include <stdint.h>
+
+
+// allocation functions
+extern void *kmalloc(size_t size);
+extern void *kcalloc(size_t size);
+extern void kfree(void * addr);
+
+// stat functions
+extern uint32_t getHeapSize();
+
+// initialize the heap
+
+extern bool initHeap();
+
+
 
 #endif

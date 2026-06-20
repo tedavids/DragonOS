@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <idt.h>
 #include <kernel.h>
+#include <registers.h>
 #include <interupt.h>
 
 #define PAGE_FAULT_PRESESNT 0b1
@@ -18,6 +19,14 @@ void pagefault(struct interupt_error_frame_t *frame) {
     
     uint8_t cpl = frame->codesegment & 0x3; // lower 3 bits of the segment are the CPL
     intPrintGeneralInfo("Page fault",frame->codesegment, frame->erroraddress, frame->errorflags, cpl);
+
+    printf("\n\r");
+    printRegisterCR0();
+    printf("  Page causing fault: ");
+    printRegisterCR2();
+    printf("  ");
+    printRegisterCR3();
+    printf("\n\r");
 
     intPrintErrorCode(frame->errorcode);
     if (frame->errorflags & PAGE_FAULT_PRESESNT) {

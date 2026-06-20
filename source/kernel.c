@@ -120,7 +120,7 @@ void kernel_main() {
     // turn on interrupts, everything is set up
     printf("Turning on interrupts...");
     EnableInterrupts();
-    printf("Done\n\r");
+    printf("Success\n\r");
 
     // Multiboot info
     printf("Loading multiboot info...");
@@ -142,14 +142,14 @@ void kernel_main() {
     }
     printf("Success\n\r");
 
-    // Initializing keyboard
-    printf("Initializing keyboard...");
-    if (!initKbd()) {
+    // initialize heap
+    printf("Initializing heap...");
+    if (!initHeap()) {
         printf("Failed\n\r");
         abort();
+    } else {
+        printf("Success\n\r");
     }
-    printf("Success\n\r");
-
 
     // command loop
     char command[256];

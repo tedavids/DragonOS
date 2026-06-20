@@ -1,177 +1,140 @@
 // heap functions
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
+#include <stdlib.h>
 #include <paging.h>
-
+#include <heaptree.h>
+#include <slaballoc.h>
 #include <stdio.h>
+
 #include <heap.h>
 
-// general flow of each 'heap'
+// enums
+enum eStack {
+    eStack4 = 0,
+    eStack8 = 1,
+    eStack16 = 2,
+    eStack32 = 3,
+    eStack64  = 4,
+    eStack128 = 5,
+    eStack256 = 6,
+    eStack512 = 7,
+    eStack1024 = 8,
+    eStack2048 = 9,
+    eStack4K = 10,
+    eStackEnd = 256
+};
 
-// allocate (malloc)
-//1.  A request comes in
-//2.  pick proper list it should be handled by 
-//3.  if no free pages, allocate one from the free list
-//3a.  break it up as necessare to fill the free list
-//4.  get the first free list entry and move it to the allocated list (keep in order of address)
-//5.  return the address to the user
+static struct heapTreeNode *heapTreeRoot = nullptr;
 
-//free
-//1.    a request comes in
-//2.    the allocated list is walked, finding the address
-//3.    the entry is moved to the proper place on the free list
-//4.    a check is made to see if an entire page is free
-//5.    if it is the entries are removed and the block is placed back on the free list (at the proper place)
-
-#define PAGE_SIZE       4096
-#define HEAP_HEAD_ARRAY_ADDRESS ((heap_head_t*) 0x5000)
-#define HEAP_FREE_LIST_ADDRESS ((free_page_list_t*) 0x5281)
-
-// each heap size
-#define HEAD_32BTYE     0
-#define HEAD_64BYTE     1
-#define HEAD_128BYTE    2
-#define HEAD_256BYTE    3
-#define HEAD_1K         4
-#define HEAD_4K         5
-#define HEAD_8K         6
-#define HEAD_16K        7
-#define HEAD_32K        8
-#define HEAD_64K        9
-
-#define HEAP_MAX_REQUEST_PAGES 16
-
-extern uint32_t _kernel_end;
-
-const uint32_t MAX_KERNEL_HEAP_SIZE = 0x500000; // 5 meg
-uint32_t numHeapPages = 0;
-
-typedef struct {
-    uint32_t    alloc;  // address of first element in allocated list
-    uint32_t    free;   // address of first element in free list
-} heap_head_t;
-
-typedef struct {
-    unsigned char free_list[160];    // bitmap of free pages in kernel heap
-    uint8_t first_free;     // first free page (we use this to make our search faster
-    uint32_t heap_start;    // the address of he start of the hap
-} free_page_list_t;
-
-heap_head_t* heap_head = HEAP_HEAD_ARRAY_ADDRESS;    // head for different size block lists, space allocated for 10 
-free_page_list_t* heap_free_list = HEAP_FREE_LIST_ADDRESS;
-
-// bit functions to find my bit
-void set_bit(unsigned char *bitmap, uint32_t n) {
-    bitmap[n / 8] |= (1 << (n % 8)); // Set the n-th bit
+// stats
+uint32_t getHeapSize() {
+    return getHeapTreeNumAlloc();
 }
 
-void clear_bit(unsigned char *bitmap, uint32_t n) {
-    bitmap[n / 8] &= (unsigned char)~(1 << (n % 8)); // clear the n-th bit
-}
+// External functions
 
-int get_bit(unsigned char *bitmap, uint32_t n) {
-    return (bitmap[n / 8] >> (n % 8)) & 1; // Return 1 if set, 0 if not
-}
+void *kmalloc(size_t size) {
+    void * ptr = nullptr;
+    enum eStack stack = eStackEnd;
 
+    // send request to proper stack
+    if (size <= 4) {
+        ptr = alloc4(size);
+        stack = eStack4;
+    } else if (size <= 8) {
+        ptr = alloc8(size);
+        stack = eStack8;
+    } else if (size <= 16) {
+        ptr = alloc16(size);
+        stack = eStack16;
+    } else if (size <= 32) {
+        ptr = alloc32(size);
+        stack = eStack32;
+    } else if (size <= 64) {
+        ptr = alloc64(size);
+        stack = eStack64;
+    } else if (size <= 128) {
+        ptr = alloc128(size);
+        stack = eStack128;
+    } else if (size <= 256) {
+        ptr = alloc256(size);
+        stack = eStack256;
+    } else if (size <= 512) {
+        ptr = alloc512(size);
+        stack = eStack512;
+    } else if (size <= 1024) {
+        ptr = alloc1024(size);
+        stack = eStack1024;
+    } else if (size <= 2048) {
+        ptr = alloc2048(size);
+        stack = eStack2048;
+    }
 
-// returns the number of pages in the block, if it = numpages, we have a winner
-//   if it returns < numpages its the first used block#
-uint32_t checkForFreeBlock(uint32_t firstfreebit, int numpages) {
-    // check parameters
-    if (numpages == 0) return 0;
-    if (numpages > HEAP_MAX_REQUEST_PAGES) return 0;
-    if (firstfreebit > numHeapPages) return 0;
-
-    uint32_t checkbit = firstfreebit + 1;
-    uint32_t counter = 1;
-
-    // if its one page we don't need to check we know already
-    if (numpages > 1) {
-        while ((numHeapPages > checkbit) && get_bit(heap_free_list->free_list, checkbit)) {
-            if (counter >= (uint32_t) numpages) break; // we have our block
-            checkbit++; // next bit to check
-            counter++;  // if its good thats the next bit
-            if (numHeapPages < checkbit) return 0;
+    // if we got a poniter 
+    if (ptr) {
+        // make sure we don't have an internal eror
+        if (getAllocTreeNode((uint32_t)ptr)){
+            printf("Internal allocation failure, duplicate allocation\n\r");
+            abort();
         }
+        insertAllocTreeNode((uint32_t) ptr, (unsigned char) stack);
     }
-    return counter;
+
+    return ptr;
 }
 
-// get free page returns an address of a single page, and removes the page from the free list (sets the bit to 0)
+void kfree(void * addr) {
+    // make sure they asked for something to be freed
+    if (!addr) return;
 
-// inputs:  numpages - How many pages to get (max of )
-
-uint32_t getFreePage(int numpages) {
-    // max request is HEAP_MAX_REQUEST_PAGES
-    if (numpages == 0) return 0; // I don't want one
-    if (numpages > HEAP_MAX_REQUEST_PAGES) return 0;
-    if (numpages > 16) return 0;
-
-    // find the first free block
-    uint8_t searchstart = heap_free_list->first_free; // bit number 
-    uint32_t firstfreebit = searchstart*8;
-    while((numHeapPages >= firstfreebit) && !get_bit(heap_free_list->free_list,firstfreebit))
-        firstfreebit++;
-    // now find out if the next x bits are also free
-    // first check if we only want want one page, in which case
-    // firstfreebit is the page we want
-    uint32_t foundpages = 0;
-    while ((numHeapPages > firstfreebit) && (numpages != (int)(foundpages = checkForFreeBlock(firstfreebit, numpages)))) {
-        if (!foundpages) return 0; // some kind of error
-        // find next free bit after the current checked block, we alreaday know its too short
-        firstfreebit += foundpages + 1;
-        while((numHeapPages >= firstfreebit) && !get_bit(heap_free_list->free_list,firstfreebit))
-            firstfreebit++;
-        if (numHeapPages >= firstfreebit) return 0; // end of the heap
-    }
-    // if we have gotten here we have found a block
-    // get the address of the block
-    uint32_t blockaddress = heap_free_list->heap_start + (firstfreebit * PAGE_SIZE);
-
-
-    // mark block as not free
-    for (uint32_t i = 0; i < (uint32_t) numpages; i++) {
-        clear_bit(heap_free_list->free_list,firstfreebit+i);
+    // was it used in an allocation
+    struct heapTreeNode *node = getAllocTreeNode((uint32_t) addr);
+    if (!node) {
+        // we didn't allocate this address
+        printf("Possible double free attempt.  Address: 0x%Xl\n\r", addr);
+        return;
     }
 
-    // they are now free so send the address back to the caller
-    return blockaddress;
-
-}
-
-// intitalize the free list
-void initFreePageList() {
-    // set up the free list 
-    heap_free_list->first_free = 0; // we start full
-    heap_free_list->heap_start = kernel_heap_start;
-
-    // I will let the optimizer make this less clean
-    uint32_t heap_size = kernel_heap_end - kernel_heap_start;
-    uint32_t heap_pages = heap_size / PAGE_SIZE;
-    uint32_t free_list_entries = heap_pages / 8; // 8 bits per entry
-
-    // load array
-    for (uint32_t i = 0; i < free_list_entries; i++) {
-        heap_free_list->free_list[i] = 0xFF;
+    bool freesuccessful = false;
+    // valid address
+    // free it then delete the allocation
+    switch ((enum eStack) node->memstack) {
+        case eStack4:   freesuccessful = free4((uint32_t)addr);
+                        break;
+        case eStack8:   freesuccessful = free8((uint32_t) addr);
+                        break;
+        case eStack16:  freesuccessful = free16((uint32_t) addr);
+                        break;
+        case eStack32:  freesuccessful = free32((uint32_t) addr);
+                        break;
+        case eStack64:  freesuccessful = free64((uint32_t) addr);
+                        break;
+        case eStack128: freesuccessful = free128((uint32_t) addr);
+                        break;
+       case eStack256: freesuccessful = free256((uint32_t) addr);
+                        break;
+       case eStack512: freesuccessful = free512((uint32_t) addr);
+                        break;
+       case eStack1024: freesuccessful = free1024((uint32_t) addr);
+                        break;
+       case eStack2048: freesuccessful = free2048((uint32_t) addr);
+                        break;
+        default: break;
     }
 
-    uint32_t leftoverpages = (heap_size - (free_list_entries*8*PAGE_SIZE));
-    if (leftoverpages) {
-        // I have at least 1
-        heap_free_list->free_list[free_list_entries + 1] = 1;
-
-    }
-    numHeapPages = (free_list_entries * 8) + leftoverpages;
-}
-// initialize heap structures
-void initHeap() {
-
-    initFreePageList();
-
-    for (int i = 0; i < HEAD_64K; i++) {
-        heap_head[i].alloc = 0;
-        heap_head[i].free = 0;
-    }
+    if (freesuccessful) deleteAllocTreeNode((uint32_t) addr);
     
+}
+// init heap
+
+bool initHeap() {
+
+    heapTreeRoot = heapTreeRoot;
+
+    bool rtncde = initHeapTree();
+    rtncde &= initSlabAlloc();
+
+    return rtncde;
 }
