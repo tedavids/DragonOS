@@ -24,6 +24,8 @@ This is a 'play' project to create an OS from scratch
 * Heap Additions
   - Add preallocated pages
   - expose all stats
+* General cleanup
+  - change all 4096 to 0x1000 for consistency
 
 
 ## 🛠️ Prerequisite

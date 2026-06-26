@@ -6,6 +6,7 @@
 #include <paging.h>
 #include <heaptree.h>
 #include <slaballoc.h>
+#include <pagealloctree.h>
 #include <stdio.h>
 
 #include <heap.h>
@@ -26,7 +27,7 @@ enum eStack {
     eStackEnd = 256
 };
 
-static struct heapTreeNode *heapTreeRoot = nullptr;
+static struct pageTreeNode *heapTreeRoot = nullptr;
 
 // stats
 uint32_t getHeapSize() {
@@ -70,6 +71,9 @@ void *kmalloc(size_t size) {
     } else if (size <= 2048) {
         ptr = alloc2048(size);
         stack = eStack2048;
+    } else {
+        ptr = allocPage(size);
+        stack = eStack4K;
     }
 
     // if we got a poniter 
@@ -113,13 +117,15 @@ void kfree(void * addr) {
                         break;
         case eStack128: freesuccessful = free128((uint32_t) addr);
                         break;
-       case eStack256: freesuccessful = free256((uint32_t) addr);
+        case eStack256: freesuccessful = free256((uint32_t) addr);
                         break;
-       case eStack512: freesuccessful = free512((uint32_t) addr);
+        case eStack512: freesuccessful = free512((uint32_t) addr);
                         break;
-       case eStack1024: freesuccessful = free1024((uint32_t) addr);
+        case eStack1024: freesuccessful = free1024((uint32_t) addr);
                         break;
-       case eStack2048: freesuccessful = free2048((uint32_t) addr);
+        case eStack2048: freesuccessful = free2048((uint32_t) addr);
+                        break;
+        case eStack4K:  freesuccessful = freePage((uint32_t) addr);
                         break;
         default: break;
     }
@@ -135,6 +141,7 @@ bool initHeap() {
 
     bool rtncde = initHeapTree();
     rtncde &= initSlabAlloc();
-
+    rtncde &= initPageTree();
+    
     return rtncde;
 }

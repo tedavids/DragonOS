@@ -52,6 +52,8 @@ extern uint32_t _kernel_end;
 
 extern void pagingreload();
 
+uint32_t kernel_heap_start = 0;
+uint32_t kernel_heap_end = 0;
 
 // array of bits.  Each bit represents a 4K page of memory
 // if the corresponding bit is 0, it is already in memory
@@ -65,14 +67,7 @@ static unsigned char availMemMap[0x20000]; // 1024 x 1024
 
 static unsigned char readwriteMap[0x20000]; // 1024x 1024
 
-// used so we can keep track of virtual and physical addresses for the page tables
-// This is because we deal in the virtual address, and the CPU deals with physical
-// Since we need to put the PHYSICAL address in the PDT we need to know it too
 
-struct Virt_Phys_t {
-    uint32_t   physicalAddr;    // the physical address in memory that PDT uses
-    uint32_t   virtualAddr;     // the virtual address that we use 
-};
 
 // for memory allocation for pages above 16m
 const uint32_t  pmmLowPage = 0x1000;            // 16M as an offset
@@ -206,7 +201,8 @@ bool virtPageUsed(uint32_t address) {
     if (!page_directory[pdOffset]) return false;
 
     // if we do get the page table
-    uint32_t *pt = (uint32_t *) page_directory[pdOffset];
+//    uint32_t *pt = (uint32_t *) page_directory[pdOffset];
+    uint32_t *pt = (uint32_t *) PDTVirtPhys[pdOffset].virtualAddr;
     uint32_t ptOffset = pteOffset(address);
 
     return (bool)(pt[ptOffset]);
@@ -220,8 +216,8 @@ uint32_t mapPage(uint32_t address, uint32_t physpageoffset,
     uint32_t pde = pdeOffset(address);
 
     // get address of the page table
-    uint32_t *pt =  (uint32_t *)(page_directory[pde] & 0xFFFFF000);
-
+    //uint32_t *pt =  (uint32_t *)(page_directory[pde] & 0xFFFFF000);
+    uint32_t *pt = (uint32_t *) PDTVirtPhys[pde].virtualAddr;
     // if the page table already exists
     if (pt) {
         // entry exists
@@ -253,7 +249,8 @@ bool unmapPage(uint32_t address) {
 
     // check if the page table entry exists
     if (!page_directory[pde]) return false;
-    uint32_t *pt = (uint32_t *)(page_directory[pde] & 0xFFFFF000);
+    //uint32_t *pt = (uint32_t *)(page_directory[pde] & 0xFFFFF000);
+    uint32_t *pt = (uint32_t *) PDTVirtPhys[pde].virtualAddr;
 
     // check if the pte exists
     if (!pt[pte]) return false;
@@ -476,7 +473,7 @@ void *mapKernelPage(uint32_t address, uint32_t *physaddr) {
     if (!physpage) return nullptr;
 
     // send back the physical page address
-    if (physaddr) *physaddr = physpage << 12;
+    if (physaddr) *physaddr = physpage * 0x1000;
 
     return (void*) mapPage(address, physpage, true, true);
 }
@@ -732,6 +729,9 @@ bool setPageTableReadOnly() {
 // this sets up the initial paging table resources
 bool initPaging() {
  
+    kernel_heap_start = ALIGN_4K(&_kernel_end);
+    kernel_heap_end = (uint32_t) multiboot_info.mmap.region[multiboot_info.mmap.count -1].baseaddr;
+
     // initialize the PDT Virtual/Physical table with what we know at the beginning
     if (!initPagingArrays()) return false;
 

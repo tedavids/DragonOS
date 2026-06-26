@@ -66,11 +66,11 @@ bool addFreeHeapNodes() {
     return true;
 }
 
-struct heapTreeNode *getNodeFromFreeList() {
+struct heapTreeNode *getHTNodeFromFreeList() {
     if (!freelist) addFreeHeapNodes();
     // check for out of memory
     if (!freelist) {
-        printf("Out of memory in getNodeFromFreeList\n\r");
+        printf("Out of memory in getNodeHTFromFreeList\n\r");
         abort();
     }
     struct heapTreeNode *node = freelist;
@@ -90,7 +90,7 @@ struct heapTreeNode *getNodeFromFreeList() {
     return node;
 }
 
-bool putNodeInFreeList(struct heapTreeNode *node) {
+bool putHTNodeInFreeList(struct heapTreeNode *node) {
     // clear our node
     node->address = 0;
     node->memstack = 0;
@@ -129,7 +129,7 @@ uint16_t max(uint16_t a, uint16_t b) {
 }
 
 struct heapTreeNode* newNode(uint32_t address, unsigned char memstack) {
-    struct heapTreeNode* node = (struct heapTreeNode*) getNodeFromFreeList();
+    struct heapTreeNode* node = (struct heapTreeNode*) getHTNodeFromFreeList();
 
     if (!node) return nullptr; // out of memory
 
@@ -251,7 +251,7 @@ struct heapTreeNode *deleteNodeInternal(struct heapTreeNode *root, uint32_t addr
                     *root = *temp;
                 }
 
-                putNodeInFreeList(temp);
+                putHTNodeInFreeList(temp);
 
             } else {
                 struct heapTreeNode *temp = minValueNode(root->rightChild);

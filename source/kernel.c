@@ -151,6 +151,19 @@ void kernel_main() {
         printf("Success\n\r");
     }
 
+    // test 
+    printf("Test Page Allocate\n\r");
+    void *ptr = kmalloc(8000);
+    if (!ptr) {
+        printf("Allocate failed\n\r");
+    } else {
+        printf("Pointer: 0x%Xl\n\r",ptr);
+        printf("Test free\n\r");
+        kfree(ptr);
+        printf("Test double free\n\r");
+        kfree(ptr);
+    }
+
     // command loop
     char command[256];
 
