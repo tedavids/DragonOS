@@ -14,8 +14,6 @@ This is a 'play' project to create an OS from scratch
 
 ## TODOs
 
-* set up heap processing
-  -   for allocations a page or more
 * create power down command (shutdown)
 * create swap file system
 * determine which file system to support (FAT32, ext4?)
@@ -24,8 +22,13 @@ This is a 'play' project to create an OS from scratch
 * Heap Additions
   - Add preallocated pages
   - expose all stats
+  - prefix heaptree functions with ht
+  - prefix pagealloctree functions with pt
 * General cleanup
-  - change all 4096 to 0x1000 for consistency
+  - add a global constant PAGESIZE and replace all 4096 and 0x1000
+  - add a global constant PGTBLADRSIZE and replace all referencx to 0x400000
+  - update header files with parameter info
+  - update doc with constants, funtions, parameters, and types
 
 
 ## 🛠️ Prerequisite
