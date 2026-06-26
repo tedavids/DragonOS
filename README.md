@@ -20,6 +20,7 @@ This is a 'play' project to create an OS from scratch
 * multi-threading
 * fix screen scrolling to do page up
 * Heap Additions
+  - Add Garbage collection on out of memory
   - Add preallocated pages
   - expose all stats
   - prefix heaptree functions with ht
@@ -39,6 +40,7 @@ This is a 'play' project to create an OS from scratch
 ## 📦 Building and Running
 
 * clone the repository
+* run the makefile in each lib* directory
 * run the makefile in the root directory
 
 ## Credits
