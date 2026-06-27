@@ -14,6 +14,7 @@ This is a 'play' project to create an OS from scratch
 
 ## TODOs
 
+* create kcalloc function
 * create power down command (shutdown)
 * create swap file system
 * determine which file system to support (FAT32, ext4?)
@@ -23,8 +24,7 @@ This is a 'play' project to create an OS from scratch
   - Add Garbage collection on out of memory
   - Add preallocated pages
   - expose all stats
-  - prefix heaptree functions with ht
-  - prefix pagealloctree functions with pt
+  - prefix pagealloctree functions and globals with pt
 * General cleanup
   - add a global constant PAGESIZE and replace all 4096 and 0x1000
   - add a global constant PGTBLADRSIZE and replace all referencx to 0x400000

@@ -6,6 +6,8 @@
 
 #include <stdint.h>
 
+// print the memory map
+
 extern int mmap();
 
 #endif

@@ -23,10 +23,22 @@ extern uint16_t getHeapTreeFreelistSize();
 extern uint32_t getHeapTreeNumAlloc();
 
 // get a node
+// Parameter:   address - The address of the allocation
+
+// Returns:     a pointer to the node with the allocation
 extern struct heapTreeNode *getAllocTreeNode(uint32_t address);
 // delete a node
+
+// Parameter:   address -- The address of the allocation
+
+// Returns:     Nothing
 void deleteAllocTreeNode(uint32_t address);
+
 // insert a node
+
+// Parameters:  address -- the address of the allocation
+//              memstack -- The type of the allocation
+
 void insertAllocTreeNode(uint32_t address, unsigned char memstack);
 
 // initialize the heap tree

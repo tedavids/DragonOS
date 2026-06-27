@@ -6,36 +6,36 @@
 #include <heaptree.h>
 
 // number of nodes
-uint32_t    numnodes = 0;
+uint32_t   htNumNodes = 0;
 
 // number of nodes in a 4k page
-const uint16_t freelistNodesPerPage = 4096 / sizeof(struct heapTreeNode);
+const uint16_t htFreeListNodesPerPage = 4096 / sizeof(struct heapTreeNode);
 
 // free list info
-struct heapTreeNode *freelist = nullptr;
-uint16_t freelistcount = 0;
+struct heapTreeNode *htFreeList = nullptr;
+uint16_t htFreeListCount = 0;
 
-static struct heapTreeNode *root = nullptr;
+static struct heapTreeNode *htRoot = nullptr;
 
 // get stats
 uint16_t getHeapTreeDepth(struct heapTreeNode *root) {
     return root->height;
 }
 
-uint16_t getHeapTreeFreelistSize() {
-    return freelistcount;
+uint16_t getHeapTreehtFreeListSize() {
+    return htFreeListCount;
 }
 
 uint32_t getHeapTreeNumAlloc() {
-    return numnodes;
+    return htNumNodes;
 }
 
-// add free nodes to the freelist
+// add free nodes to the htFreeList
 
-bool addFreeHeapNodes() {
+bool htAddFreeHeapNodes() {
     // make sure free list is empty
-    if (freelist) return false;
-    if (freelistcount > 0) return false;
+    if (htFreeList) return false;
+    if (htFreeListCount > 0) return false;
 
     // get a new page
     struct heapTreeNode *freepage = (struct heapTreeNode *) mapKernelPage(0, nullptr);
@@ -44,9 +44,9 @@ bool addFreeHeapNodes() {
 
     struct heapTreeNode *temp = freepage;
 
-    for (uint16_t i = 0; i < freelistNodesPerPage; i++) {
+    for (uint16_t i = 0; i < htFreeListNodesPerPage; i++) {
         // set address of the next structure
-        if (i == (freelistNodesPerPage - 1)) {
+        if (i == (htFreeListNodesPerPage - 1)) {
             temp->leftChild = nullptr;
         } else {
             temp->leftChild = temp + 1;
@@ -60,23 +60,23 @@ bool addFreeHeapNodes() {
         temp++;
     }
 
-    freelist = freepage;
-    freelistcount += freelistNodesPerPage;
+    htFreeList = freepage;
+    htFreeListCount += htFreeListNodesPerPage;
 
     return true;
 }
 
-struct heapTreeNode *getHTNodeFromFreeList() {
-    if (!freelist) addFreeHeapNodes();
+struct heapTreeNode *htGetNodeFromhtFreeList() {
+    if (!htFreeList) htAddFreeHeapNodes();
     // check for out of memory
-    if (!freelist) {
-        printf("Out of memory in getNodeHTFromFreeList\n\r");
+    if (!htFreeList) {
+        printf("Out of memory in getNodeHTFromhtFreeList\n\r");
         abort();
     }
-    struct heapTreeNode *node = freelist;
+    struct heapTreeNode *node = htFreeList;
 
-    // freelist now start at the leftChils
-    freelist = node->leftChild;
+    // htFreeList now start at the leftChils
+    htFreeList = node->leftChild;
     // clear everything
     node->leftChild = nullptr;
     node->rightChild = nullptr;
@@ -85,12 +85,12 @@ struct heapTreeNode *getHTNodeFromFreeList() {
     node->height = 0;
 
     // update stats
-    freelistcount--;
+    htFreeListCount--;
 
     return node;
 }
 
-bool putHTNodeInFreeList(struct heapTreeNode *node) {
+bool htPutNodeInFreeList(struct heapTreeNode *node) {
     // clear our node
     node->address = 0;
     node->memstack = 0;
@@ -99,37 +99,37 @@ bool putHTNodeInFreeList(struct heapTreeNode *node) {
     node->leftChild = nullptr;
 
     // decrement how many we have
-    numnodes--;
+   htNumNodes--;
 
     // if free list is empty, then we just add this one
-    if (!freelist) {
-        freelistcount = 1;
-        freelist = node;
+    if (!htFreeList) {
+        htFreeListCount = 1;
+        htFreeList = node;
         return true;
     }
 
     // put this at the beginning of the list
-    node->leftChild = freelist->leftChild->leftChild;
-    freelist->leftChild = node;
+    node->leftChild = htFreeList->leftChild->leftChild;
+    htFreeList->leftChild = node;
 
-    freelistcount++;
+    htFreeListCount++;
 
     return true;
 }
 
-uint16_t height(struct heapTreeNode* node) {
+uint16_t htHeight(struct heapTreeNode* node) {
     // nullptr node is 0 height
     if (!node) return 0;
     
     return node->height;
 }
 
-uint16_t max(uint16_t a, uint16_t b) {
+uint16_t htMax(uint16_t a, uint16_t b) {
     return (a > b) ? a : b;
 }
 
-struct heapTreeNode* newNode(uint32_t address, unsigned char memstack) {
-    struct heapTreeNode* node = (struct heapTreeNode*) getHTNodeFromFreeList();
+struct heapTreeNode* htNewNode(uint32_t address, unsigned char memstack) {
+    struct heapTreeNode* node = (struct heapTreeNode*) htGetNodeFromhtFreeList();
 
     if (!node) return nullptr; // out of memory
 
@@ -138,79 +138,79 @@ struct heapTreeNode* newNode(uint32_t address, unsigned char memstack) {
     node->leftChild = nullptr;
     node->rightChild = nullptr;
     node->height = 1;
-    numnodes++;
+   htNumNodes++;
     return (node);
 }
 
-struct heapTreeNode* rotateRight(struct heapTreeNode* node) {
+struct heapTreeNode* htRotateRight(struct heapTreeNode* node) {
     struct heapTreeNode* left = node->leftChild;
     struct heapTreeNode* right = left->rightChild;
 
     left->rightChild = node;
-    left->height = max(height(left->leftChild), height(left->rightChild)) + 1;
+    left->height = htMax(htHeight(left->leftChild), htHeight(left->rightChild)) + 1;
 
     node->leftChild = right;
-    node->height = max(height(node->leftChild), height(node->rightChild)) + 1;
+    node->height = htMax(htHeight(node->leftChild), htHeight(node->rightChild)) + 1;
 
     return left;
 }
 
-struct heapTreeNode* rotateLeft(struct heapTreeNode* node) {
+struct heapTreeNode* htRotateLeft(struct heapTreeNode* node) {
     struct heapTreeNode* right = node->rightChild;
     struct heapTreeNode* left = right->leftChild;
     right->leftChild = node;
     node->rightChild = left;
-    node->height = max(height(node->leftChild), height(node->rightChild)) + 1;
-    right->height = max(height(right->leftChild), height(right->rightChild)) + 1;
+    node->height = htMax(htHeight(node->leftChild), htHeight(node->rightChild)) + 1;
+    right->height = htMax(htHeight(right->leftChild), htHeight(right->rightChild)) + 1;
     return right;
 }
 
-int getBalance(struct heapTreeNode* node) {
+int htGetBalance(struct heapTreeNode* node) {
     // a null node counts as zero
     if (!node) return 0;
 
-    return height(node->leftChild) - height(node->rightChild);
+    return htHeight(node->leftChild) - htHeight(node->rightChild);
 }
 
 
-struct heapTreeNode* insertNodeInternal(struct heapTreeNode* node, uint32_t address, unsigned char memstack) {
-    if (!node) return (newNode(address, memstack));
+struct heapTreeNode* htInsertNodeInternal(struct heapTreeNode* node, uint32_t address, unsigned char memstack) {
+    if (!node) return (htNewNode(address, memstack));
 
     if (address < node->address) {
-        node->leftChild = insertNodeInternal(node->leftChild, address, memstack);
+        node->leftChild = htInsertNodeInternal(node->leftChild, address, memstack);
     }
     else {
         if (address > node->address) {
-            node->rightChild = insertNodeInternal(node->rightChild, address, memstack);
+            node->rightChild = htInsertNodeInternal(node->rightChild, address, memstack);
         }
         else {
             return (node);
         }
     }
 
-    node->height = 1 + max(height(node->leftChild), height(node->rightChild));
+    node->height = 1 + htMax(htHeight(node->leftChild), htHeight(node->rightChild));
 
-    int balance = getBalance(node);
+    int balance = htGetBalance(node);
 
     if (balance > 1) {
         if (address < node->leftChild->address) {
-            return rotateRight(node);
+            return htRotateRight(node);
         } else {
             if (address > node->leftChild->address) {
-                node->leftChild = rotateLeft(node->leftChild);
-                return rotateRight(node);
+                node->leftChild = htRotateLeft(node->leftChild);
+                return htRotateRight(node);
             }
         }
     }
 
     if (balance < -1) {
         if (address > node->rightChild->address) {
-            return rotateLeft(node);
+            return htRotateLeft(node);
         }
         else {
             if (address < node->rightChild->address) {
-                node->rightChild = rotateRight(node->rightChild);
-                return rotateLeft(node);
+                node->rightChild = htRotateRight(node->rightChild);
+                return htRotateLeft(node);
             }
         }
     }
@@ -220,10 +220,10 @@ struct heapTreeNode* insertNodeInternal(struct heapTreeNode* node, uint32_t addr
 
 void insertAllocTreeNode(uint32_t address, unsigned char memstack) {
 
-    root = insertNodeInternal(root,address, memstack);
+    htRoot = htInsertNodeInternal(htRoot,address, memstack);
 }
 
-struct heapTreeNode* minValueNode(struct heapTreeNode* node) {
+struct heapTreeNode* htMinValueNode(struct heapTreeNode* node) {
     struct heapTreeNode* current = node;
 
     while (current->leftChild)
@@ -232,14 +232,14 @@ struct heapTreeNode* minValueNode(struct heapTreeNode* node) {
     return current;
 }
 
-struct heapTreeNode *deleteNodeInternal(struct heapTreeNode *root, uint32_t address) {
+struct heapTreeNode *htDeleteNodeInternal(struct heapTreeNode *root, uint32_t address) {
     if (!root) return root;
 
     if (address < root->address) {
-        root->leftChild = deleteNodeInternal(root->leftChild, address);
+        root->leftChild = htDeleteNodeInternal(root->leftChild, address);
     } else {
         if (address > root->address) {
-            root->rightChild = deleteNodeInternal(root->rightChild, address);
+            root->rightChild = htDeleteNodeInternal(root->rightChild, address);
         } else {
             if ((!root->leftChild) || ((!root->rightChild))) {
                 struct heapTreeNode *temp = root->leftChild ? root->leftChild : root->rightChild;
@@ -251,32 +251,32 @@ struct heapTreeNode *deleteNodeInternal(struct heapTreeNode *root, uint32_t addr
                     *root = *temp;
                 }
 
-                putHTNodeInFreeList(temp);
+                htPutNodeInFreeList(temp);
 
             } else {
-                struct heapTreeNode *temp = minValueNode(root->rightChild);
+                struct heapTreeNode *temp = htMinValueNode(root->rightChild);
                 root->address = temp->address;
-                root->rightChild = deleteNodeInternal(root->rightChild, temp->address);
+                root->rightChild = htDeleteNodeInternal(root->rightChild, temp->address);
             }
         }
         if (!root) return root;
 
-        root->height = 1 + max(height(root->leftChild), height(root->rightChild));
-        int balance = getBalance(root);
+        root->height = 1 + htMax(htHeight(root->leftChild), htHeight(root->rightChild));
+        int balance = htGetBalance(root);
 
-        if ((balance > 1) && (getBalance(root->leftChild) >= 0)) 
-            return rotateRight(root);
+        if ((balance > 1) && (htGetBalance(root->leftChild) >= 0)) 
+            return htRotateRight(root);
 
-        if ((balance > 1) && (getBalance(root->leftChild) < 0)) {
-            root->leftChild = rotateLeft(root->leftChild);
-            return rotateRight(root);
+        if ((balance > 1) && (htGetBalance(root->leftChild) < 0)) {
+            root->leftChild = htRotateLeft(root->leftChild);
+            return htRotateRight(root);
         }
 
-        if ((balance < -1) && (getBalance(root->rightChild) < 0))
-            return rotateLeft(root);
-        if ((balance < -1) && (getBalance(root->rightChild) > 0)) {
-            root->rightChild = rotateRight(root->rightChild);
-            return rotateLeft(root);
+        if ((balance < -1) && (htGetBalance(root->rightChild) < 0))
+            return htRotateLeft(root);
+        if ((balance < -1) && (htGetBalance(root->rightChild) > 0)) {
+            root->rightChild = htRotateRight(root->rightChild);
+            return htRotateLeft(root);
         }
     }
 
@@ -284,10 +284,10 @@ struct heapTreeNode *deleteNodeInternal(struct heapTreeNode *root, uint32_t addr
 }
 
 void deleteAllocTreeNode(uint32_t address) {
-    root =  deleteNodeInternal(root, address);
+    htRoot =  htDeleteNodeInternal(htRoot, address);
 }
 
-struct heapTreeNode *getNodeInternal(struct heapTreeNode *root, uint32_t address) {
+struct heapTreeNode *htGetNodeInternal(struct heapTreeNode *root, uint32_t address) {
     // empty tree?
     if (!root) return nullptr;
 
@@ -295,18 +295,18 @@ struct heapTreeNode *getNodeInternal(struct heapTreeNode *root, uint32_t address
     if (root->address == address) return root;
 
     if (root->address > address) {
-        return getNodeInternal(root->leftChild, address);
+        return htGetNodeInternal(root->leftChild, address);
     }
 
-    return getNodeInternal(root->rightChild, address);
+    return htGetNodeInternal(root->rightChild, address);
 }
 
 struct heapTreeNode *getAllocTreeNode(uint32_t address) {
-    return getNodeInternal(root, address);
+    return htGetNodeInternal(htRoot, address);
 }
 
 bool initHeapTree() {
-    bool rtncde = addFreeHeapNodes();
+    bool rtncde = htAddFreeHeapNodes();
 
     return rtncde;
 }
