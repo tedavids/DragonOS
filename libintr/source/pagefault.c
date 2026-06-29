@@ -57,6 +57,6 @@ void pagefault(struct interupt_error_frame_t *frame) {
     printf("Halting\r\n");
 
     // handle the fault fallout
-    kernelabort(IDT_GENERAL_PROTECTION_FLT, frame->codesegment, frame->erroraddress, frame->errorflags, frame->errorcode);
+    kernelabort(IDT_PAGE_FAULT, frame->codesegment, frame->erroraddress, frame->errorflags, frame->errorcode);
 
 }

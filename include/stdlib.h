@@ -14,13 +14,29 @@ __attribute__((__noreturn__))
 
 // abort the kernel
 
-void abort(void);
+extern void abort(void);
 
 // "print" to a string
 
-int snprintf(char* restrict buff, size_t buffsize, const char* restrict format, ...);
+// return a formatted string 
 
-int snprintfint(char* restrict buff, size_t buffsize, const char* restrict format, va_list* parameters);
+// Parameters:  buff -- the output buffer
+//              buffsize -- The length of the output buffer
+//              format -- The format string
+//              ... -- A variable list of items to fill the format 
+
+// returns:     The lenght of the string
+extern int snprintf(char* restrict buff, size_t buffsize, const char* restrict format, ...);
+
+// return a formatted string 
+
+// Parameters:  buff -- the output buffer
+//              buffsize -- The length of the output buffer
+//              format -- The format string
+//              ... -- A variable list of items to fill the format 
+
+// returns:     The lenght of the string
+extern int snprintfint(char* restrict buff, size_t buffsize, const char* restrict format, va_list* parameters);
 
 #ifdef __cplusplus
 }

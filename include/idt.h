@@ -15,11 +15,11 @@
 #define IDT_PRIVLEDGE_KERNEL        0b00000000
 #define IDT_PRIVLEDGE_USER          0b01100000
 #define IDT_GATE_TYPE_TASK          0b00000101
-#define IDT_GATE_TYPE_INTERrUPT16   0b00000110
+#define IDT_GATE_TYPE_INTERRUPT16   0b00000110
 #define IDT_GATE_TYPE_TRAP16        0b00000111
 #define IDT_GATE_TYPE_INTERRUPT32   0b00001110
 #define IDT_GATE_TYPE_TRAP32        0b00001111
-#define IDT_INTERRUPT_GATE32        (IDT_PRESENT & IDT_GATE_TYPE_INTERRUPT32)
+#define IDT_INTERRUPT_GATE32        (IDT_PRESENT | IDT_GATE_TYPE_INTERRUPT32)
 
 #define IDT_DIVIDE_BY_ZERO          0
 #define IDT_NON_MASKABLE_INTERRUPT  2
@@ -84,9 +84,12 @@ extern void int21_handler();
 extern struct idt_entry         IDT[256];
 extern struct idt_ptr           IDTP;
 
+// Enable all interupts with the STI instruction
 extern void EnableInterrupts();
+// Disable all interupts with the CLI instruction
 extern void DisableInterrupts();
 
+// set IDT by loading it to the register
 extern void setIDT();
 
 // set the descriptor

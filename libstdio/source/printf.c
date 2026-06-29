@@ -7,9 +7,9 @@
 #include <stdio.h>
 #include <string.h>
 
-static bool print(const char* data, size_t length) 
+static bool print(const char* string, size_t length) 
 {
-    const unsigned char* bytes = (const unsigned char*) data;
+    const unsigned char* bytes = (const unsigned char*) string;
     
     for (size_t i = 0; i < length; i++) 
         if (putchar(bytes[i]) == EOF)
