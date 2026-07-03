@@ -12,7 +12,7 @@ bool isdelim(char c, const char* const restrict delims) {
     return false;
 }
 
-char* strntok(const char* const str, const char * const delim, char buffer[], int buflen) {
+char* strntok(const char* const str, const char * const delim, char *buffer, int buflen) {
     // check parameters
     if (!str) return nullptr;
     if (!buflen) return nullptr;

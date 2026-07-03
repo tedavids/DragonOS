@@ -12,13 +12,22 @@
 #define APIC_MASK_ALL_PORTS         0xFF
 #define APIC_END_OF_INTERRUPT       0x20
 
+// the ticks of the clock
 extern volatile uint64_t ticks;
 
+// handler for interrut 32 (0x20)  APIC timer
 extern void int32_handler(); 
 
+/// Initialize the APIC processor
+/// Returns:    true if initialization is successfull
 extern bool initAPIC();
+// get the number of ticks 
+// returns: The number of tics that have happend since the timer was set up
 extern uint64_t getTicks();
+// Initialize the timer
+// returns:     true if initialization is ok
 extern bool initAPICtimer();
+// clear all APIC interrupts, this sends end of interrupt to everything
 extern void clearAPICInterrupts();
 
 #endif

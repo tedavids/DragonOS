@@ -120,7 +120,7 @@ void kernel_main() {
     // turn on interrupts, everything is set up
     printf("Turning on interrupts...");
     EnableInterrupts();
-    printf("Done\n\r");
+    printf("Success\n\r");
 
     // Multiboot info
     printf("Loading multiboot info...");
@@ -132,7 +132,7 @@ void kernel_main() {
 
     printf("Parameters: %s\n\r", multiboot_info.cmdline);
 
-    printf("Total Memory: 0x%xl\n\r",multiboot_info.meminfo.upper);
+    printf("Total Memory: 0x%xl (%ulM)\n\r",multiboot_info.meminfo.upper, multiboot_info.meminfo.upper / 1024 / 1024);
 
     // initialize paging
     printf("Initializing paging...");
@@ -142,46 +142,23 @@ void kernel_main() {
     }
     printf("Success\n\r");
 
-    // test paging functions here
-
-    uint32_t physpage;
-    uint32_t address = (uint32_t) mapKernelPage(0xC0158000, &physpage);
-
-    printf("Successfully mapped page: 0x%Xl with physical address: 0x%Xl\n\r",
-            address, physpage);
-
-    printf("Testing Read only...");
-    if (setPageReadOnly(address)) {
-        printf("Success\n\r");
-    } else {
-        printf("Failed\n\r");
-    }
-
-
-    printf("Testing Read/write only...");
-    if (setPageReadWrite(address)) {
-        printf("Success\n\r");
-    } else {
-        printf("Failed\n\r");
-    }
-
-    printf("Page 0x%Xl ", address);
-    if (!unmapPage(address)) {
-        printf("not unmapped\n\r");
-    } else {
-        printf("unmapped\n\r");
-    }
-    printf("Success\n\r");
-
-
-    // Initializing keyboard
-    printf("Initializing keyboard...");
-    if (!initKbd()) {
+    // initialize heap
+    printf("Initializing heap...");
+    if (!initHeap()) {
         printf("Failed\n\r");
         abort();
+    } else {
+        printf("Success\n\r");
     }
-    printf("Success\n\r");
 
+    // initialize keyboard
+    printf("Initializing keyboard...");
+    if (initKbd()) {
+        printf("Success\n\r");
+    } else {
+        printf("Failed\n\4");
+        abort();
+    }
 
     // command loop
     char command[256];

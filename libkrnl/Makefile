@@ -18,7 +18,7 @@ LD=i686-elf-gcc
 
 #initail flags
 #CFLAGS ?= -O2 -ggdb
-CFLAGS ?= -g
+CFLAGS ?= -g -std=gnu23 
 CPPFLAGS ?=
 LDFLAGS ?= 
 LIBS ?=
@@ -44,7 +44,11 @@ $(OBJDIR)/multiboot.o \
 $(OBJDIR)/paging.o \
 $(OBJDIR)/time.o \
 $(OBJDIR)/heap.o \
+$(OBJDIR)/heaptree.o \
+$(OBJDIR)/slaballoc.o \
+$(OBJDIR)/pagealloctree.o \
 $(OBJDIR)/bitarray.o \
+$(OBJDIR)/registers.o \
 
 HOSTEDOBJS = \
 
@@ -80,7 +84,19 @@ $(OBJDIR)/time.o : $(SRCDIR)/time.c
 $(OBJDIR)/heap.o : $(SRCDIR)/heap.c
 	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
 
+$(OBJDIR)/heaptree.o : $(SRCDIR)/heaptree.c
+	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
+
+$(OBJDIR)/slaballoc.o : $(SRCDIR)/slaballoc.c
+	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
+
+$(OBJDIR)/pagealloctree.o : $(SRCDIR)/pagealloctree.c
+	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
+
 $(OBJDIR)/bitarray.o : $(SRCDIR)/bitarray.c
+	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
+
+$(OBJDIR)/registers.o : $(SRCDIR)/registers.c
 	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
 
 clean:

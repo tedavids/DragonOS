@@ -16,22 +16,6 @@ extern uint32_t                 BOOTSTATUS;             // status of boot tasks
 
 // public functions
 
-// allocation functions
-
-// kmalloc -- allocate memory
-
-// inputs: size -- the number of bytes you wish to allocate
-
-// return: a void pointer to the memory block, or nullptr if it fails
-
-extern void* kmalloc(size_t size);
-
-// kfree -- free memory gotten from kmalloc
-
-// inputs:  the void pointer returned by kmalloc
-
-extern void kfree(void* ptr);
-
 // getSelectorText -- get the text string for a given GDT selector
 // inputs:  selector -- the selector you wish to print
 //          buffer -- a buffer to return the string in

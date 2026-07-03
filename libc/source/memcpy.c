@@ -3,6 +3,10 @@
 #include <string.h>
 
 void* memcpy(void* restrict dstptr, const void* restrict srcptr, size_t size) {
+    if (!dstptr) return nullptr;
+    if (!srcptr) return nullptr;
+    if (!size) return nullptr;
+    
     unsigned char* dst = (unsigned char*) dstptr;
     const unsigned char* src = (const unsigned char*) srcptr;
 

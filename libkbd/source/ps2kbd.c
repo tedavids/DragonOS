@@ -869,7 +869,7 @@ void processKeypress(uint8_t keycode) {
     }
 }
 
-void ps2kbd_handler(struct interupt_frame_t *parms) {
+void ps2kbd_handler(struct interrupt_frame_t *parms) {
     parms->erroraddress = parms->erroraddress;
     auto status = getPortByte(KBD_STATUS_PORT);
     if (status & KBD_STATUS_OUTBUF_HAS_DATA) {

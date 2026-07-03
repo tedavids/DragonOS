@@ -18,6 +18,17 @@ struct page_table_t {
     pte_t pte[1024];
 };
 
+// used so we can keep track of virtual and physical addresses for the page tables
+// This is because we deal in the virtual address, and the CPU deals with physical
+// Since we need to put the PHYSICAL address in the PDT we need to know it too
+
+struct Virt_Phys_t {
+    uint32_t   physicalAddr;    // the physical address in memory that PDT uses
+    uint32_t   virtualAddr;     // the virtual address that we use 
+};
+
+extern struct Virt_Phys_t  PDTVirtPhys[1024];
+
 extern const uint32_t           PAGINGIMPLEMENTED;
 extern uint32_t                 kernel_heap_end;
 extern uint32_t                 kernel_heap_start;             // end of the kernel (beginning of the heap)

@@ -348,7 +348,7 @@ TSS_SELECTOR:            .word   0x28
 .global stack_bottom
 .type stack_bottom, @object
 stack_bottom:
-.skip 16384 # 16 KiB
+.skip 0x8000 # 32 KiB
 .global stack_top
 .type stack_top, @object
 stack_top:

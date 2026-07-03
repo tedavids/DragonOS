@@ -8,7 +8,7 @@
 #include <interupt.h>
 
 
-void alignmentcheck(struct interupt_error_frame_t *frame) {
+void alignmentcheck(struct interrupt_error_frame_t *frame) {
     
     uint8_t cpl = frame->codesegment & 0x3; // lower 3 bits of the segment are the CPL
     intPrintGeneralInfo("Alignment check", frame->codesegment, frame->erroraddress, frame->errorflags, cpl);
