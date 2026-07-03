@@ -10,7 +10,7 @@
 
 
 
-void ctlprotexc(struct interupt_error_frame_t *frame) {
+void ctlprotexc(struct interrupt_error_frame_t *frame) {
     
     uint8_t cpl = frame->codesegment & 0x3; // lower 3 bits of the segment are the CPL
     intPrintGeneralInfo("Control protection exception", frame->codesegment, frame->erroraddress, frame->errorflags, cpl);

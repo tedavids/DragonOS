@@ -23,7 +23,7 @@
 #define INT_HAS_CUPID       0x200000
 
 // basic interrupt frame
-struct interupt_frame_t {
+struct interrupt_frame_t {
     // we don't care about these from pusha in the caller
     uint32_t    edi;
     uint32_t    esi;
@@ -40,7 +40,7 @@ struct interupt_frame_t {
 };
 
 // basic interrupt frame
-struct interupt_error_frame_t {
+struct interrupt_error_frame_t {
     // we don't care about these from pusha in the caller
     uint32_t    edi;
     uint32_t    esi;

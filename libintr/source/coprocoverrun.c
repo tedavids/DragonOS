@@ -9,7 +9,7 @@
 
 
 
-void coprocoverrun(struct interupt_frame_t *frame) {
+void coprocoverrun(struct interrupt_frame_t *frame) {
     
     uint8_t cpl = frame->codesegment & 0x3; // lower 3 bits of the segment are the CPL
     intPrintGeneralInfo("Coprocessor segment overrun", frame->codesegment, frame->erroraddress, frame->errorflags, cpl);

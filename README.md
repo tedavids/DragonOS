@@ -33,7 +33,6 @@ This is a 'play' project to create an OS from scratch
   - update header files with parameter info
   - update doc with constants, funtions, parameters, and types
   - move 'Halting message to the kernelabort() function and remove from the interrupt functions
-  - Spell 'interupt_frame_t' and 'interupt_error_frame_t' correctly and fix in interrupt handlers
 
 
 ## 🛠️ Prerequisite

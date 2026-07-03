@@ -11,7 +11,7 @@
 #define IDT_ERROR           0x2
 #define LDT_REFERENCE       0x4
 
-void gpfault(struct interupt_error_frame_t *frame) {
+void gpfault(struct interrupt_error_frame_t *frame) {
     
     uint8_t cpl = frame->codesegment & 0x3; // lower 3 bits of the segment are the CPL
     intPrintGeneralInfo("General protection fault",frame->codesegment, frame->erroraddress, frame->errorflags, cpl);
