@@ -132,7 +132,7 @@ void kernel_main() {
 
     printf("Parameters: %s\n\r", multiboot_info.cmdline);
 
-    printf("Total Memory: 0x%xl\n\r",multiboot_info.meminfo.upper);
+    printf("Total Memory: 0x%xl (%ulM)\n\r",multiboot_info.meminfo.upper, multiboot_info.meminfo.upper / 1024 / 1024);
 
     // initialize paging
     printf("Initializing paging...");
@@ -151,17 +151,13 @@ void kernel_main() {
         printf("Success\n\r");
     }
 
-    // test 
-    printf("Test Page Allocate\n\r");
-    void *ptr = kmalloc(8000);
-    if (!ptr) {
-        printf("Allocate failed\n\r");
+    // initialize keyboard
+    printf("Initializing keyboard...");
+    if (initKbd()) {
+        printf("Success\n\r");
     } else {
-        printf("Pointer: 0x%Xl\n\r",ptr);
-        printf("Test free\n\r");
-        kfree(ptr);
-        printf("Test double free\n\r");
-        kfree(ptr);
+        printf("Failed\n\4");
+        abort();
     }
 
     // command loop

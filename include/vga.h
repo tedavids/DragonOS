@@ -20,7 +20,7 @@ enum vga_color {
     VGA_COLOR_LIGHT_CYAN = 11,
     VGA_COLOR_LIGHT_RED = 12,
     VGA_COLOR_LIGHT_MAGENTA = 13,
-    VGA_COLOR_LIGHT_BROW = 14,
+    VGA_COLOR_LIGHT_BROWN = 14,
     VGA_COLOR_WHITE = 15,
     VGA_COLOR_END 
 }; // enum vga_color
@@ -83,13 +83,42 @@ extern bool move80x25CursorRight(struct cursor_pos_t* cursor, bool allowscroll);
 
 extern bool validate80x25Cursor(struct cursor_pos_t* cursor, bool fix);
 
-// enable disable cursor
+// enable the cursor visually
+// Parameters:  type - The type of cursor to use
+
+// Returns:     true if successful, false if not
 extern bool enableVGACursor(struct vga_cursor_t type);
+
+// disable the cursor visually
+// Parameters:  None
+
+// Returns:     None
 extern void disableVGACursor();
 
+// Get the text color code for a character
+// Parameters:  fg -- The foreground color
+//              bg -- The background color
+
+// Retuns:      the color code to use with a character
 extern uint8_t crtVGATextColor( enum vga_color fg, enum vga_color bg);
+
+// get the formatted text for a character on a VGA screen
+// Parameters:  uc -- The character
+//              color -- The foreground and background color
+
+// Returns:     A value suitible for puting in the vga buffer
 extern uint16_t crtVGAText(unsigned char uc, uint8_t color);
+
+// get the position of the cursor in the VGA buffer
+// Parameters:  cursorpos -- The cursor position
+
+// Returns:     The position in the buffer
 extern uint16_t cursorpostolineal(struct cursor_pos_t cursorpos);
+
+// get the cursor position given the position in the VGA buffer
+// Parameter:   lineal -- The buffer position
+
+// Returns:     The curpos in cursor_pos_t format given a lineal address
 extern struct cursor_pos_t linealtocursorpos(uint16_t lineal);
 
 #endif

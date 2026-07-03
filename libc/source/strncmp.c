@@ -4,6 +4,11 @@
 #include <string.h>
 
 int strncmp(int len, const char* const s1, const char* const s2) {
+    //  handle nulls
+    if (!s1 && !s2) return 0;
+    if (!s2) return -1;
+    if (!s1) return 1;
+
     if (len == 0) return 0;
 
     for (int i = 0; i < len; i++) {

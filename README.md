@@ -15,6 +15,8 @@ This is a 'play' project to create an OS from scratch
 ## TODOs
 
 * create kcalloc function
+* finish strntok function
+* finish mapPage to get a page from the kernel (or user) heap
 * create power down command (shutdown)
 * create swap file system
 * determine which file system to support (FAT32, ext4?)

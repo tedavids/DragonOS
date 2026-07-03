@@ -14,20 +14,20 @@ struct pageTreeNode {
 };
 
 // number of nodes
-uint32_t    numPTNodes = 0;
+uint32_t    ptNumNodes = 0;
 
 // number of nodes in a 4k page
-const uint16_t freeListPTNodesPerPage = 4096 / sizeof(struct pageTreeNode);
+const uint16_t ptFreeListNodesPerPage = 4096 / sizeof(struct pageTreeNode);
 
 // free list info
 struct pageTreeNode *ptFreeList = nullptr;
 uint16_t ptFreeListCount = 0;
 
-static struct pageTreeNode *root = nullptr;
+static struct pageTreeNode *ptRoot = nullptr;
 
 // get stats
 uint16_t getPageTreeDepth() {
-    return root->height;
+    return ptRoot->height;
 }
 
 uint16_t getPageTreeFreelistSize() {
@@ -35,12 +35,12 @@ uint16_t getPageTreeFreelistSize() {
 }
 
 uint32_t getPageTreeNumAlloc() {
-    return numPTNodes;
+    return ptNumNodes;
 }
 
 // add free nodes to the freelist
 
-bool addFreePTNodes() {
+bool ptAddFreeNodes() {
     // make sure free list is empty
     if (ptFreeList) return false;
     if (ptFreeListCount > 0) return false;
@@ -52,9 +52,9 @@ bool addFreePTNodes() {
 
     struct pageTreeNode *temp = freepage;
 
-    for (uint16_t i = 0; i < freeListPTNodesPerPage; i++) {
+    for (uint16_t i = 0; i < ptFreeListNodesPerPage; i++) {
         // set address of the next structure
-        if (i == (freeListPTNodesPerPage - 1)) {
+        if (i == (ptFreeListNodesPerPage - 1)) {
             temp->leftChild = nullptr;
         } else {
             temp->leftChild = temp + 1;
@@ -69,13 +69,13 @@ bool addFreePTNodes() {
     }
 
     ptFreeList = freepage;
-    ptFreeListCount += freeListPTNodesPerPage;
+    ptFreeListCount += ptFreeListNodesPerPage;
 
     return true;
 }
 
-struct pageTreeNode *getNodeFromFreeList() {
-    if (!ptFreeList) addFreePTNodes();
+struct pageTreeNode *ptGetNodeFromFreeList() {
+    if (!ptFreeList) ptAddFreeNodes();
     // check for out of memory
     if (!ptFreeList) {
         printf("Out of memory in getNodeFromFreeList\n\r");
@@ -98,7 +98,7 @@ struct pageTreeNode *getNodeFromFreeList() {
     return node;
 }
 
-bool putNodeInFreeList(struct pageTreeNode *node) {
+bool ptPutNodeInFreeList(struct pageTreeNode *node) {
     // clear our node
     node->address = 0;
     node->numpages = 0;
@@ -107,7 +107,7 @@ bool putNodeInFreeList(struct pageTreeNode *node) {
     node->leftChild = nullptr;
 
     // decrement how many we have
-    numPTNodes--;
+    ptNumNodes--;
 
     // if free list is empty, then we just add this one
     if (!ptFreeList) {
@@ -136,8 +136,8 @@ uint16_t ptMax(uint16_t a, uint16_t b) {
     return (a > b) ? a : b;
 }
 
-struct pageTreeNode* nePTNode(uint32_t address, unsigned char numpages) {
-    struct pageTreeNode* node = (struct pageTreeNode*) getNodeFromFreeList();
+struct pageTreeNode* ptNewNode(uint32_t address, unsigned char numpages) {
+    struct pageTreeNode* node = (struct pageTreeNode*) ptGetNodeFromFreeList();
 
     if (!node) return nullptr; // out of memory
 
@@ -146,11 +146,11 @@ struct pageTreeNode* nePTNode(uint32_t address, unsigned char numpages) {
     node->leftChild = nullptr;
     node->rightChild = nullptr;
     node->height = 1;
-    numPTNodes++;
+    ptNumNodes++;
     return (node);
 }
 
-struct pageTreeNode* rotatePTRight(struct pageTreeNode* node) {
+struct pageTreeNode* ptRotateRight(struct pageTreeNode* node) {
     struct pageTreeNode* left = node->leftChild;
     struct pageTreeNode* right = left->rightChild;
 
@@ -163,7 +163,7 @@ struct pageTreeNode* rotatePTRight(struct pageTreeNode* node) {
     return left;
 }
 
-struct pageTreeNode* rotatePTLeft(struct pageTreeNode* node) {
+struct pageTreeNode* ptRotateLeft(struct pageTreeNode* node) {
     struct pageTreeNode* right = node->rightChild;
     struct pageTreeNode* left = right->leftChild;
     right->leftChild = node;
@@ -173,7 +173,7 @@ struct pageTreeNode* rotatePTLeft(struct pageTreeNode* node) {
     return right;
 }
 
-int getPTBalance(struct pageTreeNode* node) {
+int ptGetBalance(struct pageTreeNode* node) {
     // a null node counts as zero
     if (!node) return 0;
 
@@ -181,15 +181,15 @@ int getPTBalance(struct pageTreeNode* node) {
 }
 
 
-struct pageTreeNode* insertPTNodeInternal(struct pageTreeNode* node, uint32_t address, unsigned char numpages) {
-    if (!node) return (nePTNode(address, numpages));
+struct pageTreeNode* ptInsertNodeInternal(struct pageTreeNode* node, uint32_t address, unsigned char numpages) {
+    if (!node) return (ptNewNode(address, numpages));
 
     if (address < node->address) {
-        node->leftChild = insertPTNodeInternal(node->leftChild, address, numpages);
+        node->leftChild = ptInsertNodeInternal(node->leftChild, address, numpages);
     }
     else {
         if (address > node->address) {
-            node->rightChild = insertPTNodeInternal(node->rightChild, address, numpages);
+            node->rightChild = ptInsertNodeInternal(node->rightChild, address, numpages);
         }
         else {
             return (node);
@@ -198,27 +198,27 @@ struct pageTreeNode* insertPTNodeInternal(struct pageTreeNode* node, uint32_t ad
 
     node->height = 1 + ptMax(ptHeight(node->leftChild), ptHeight(node->rightChild));
 
-    int balance = getPTBalance(node);
+    int balance = ptGetBalance(node);
 
     if (balance > 1) {
         if (address < node->leftChild->address) {
-            return rotatePTRight(node);
+            return ptRotateRight(node);
         } else {
             if (address > node->leftChild->address) {
-                node->leftChild = rotatePTLeft(node->leftChild);
-                return rotatePTRight(node);
+                node->leftChild = ptRotateLeft(node->leftChild);
+                return ptRotateRight(node);
             }
         }
     }
 
     if (balance < -1) {
         if (address > node->rightChild->address) {
-            return rotatePTLeft(node);
+            return ptRotateLeft(node);
         }
         else {
             if (address < node->rightChild->address) {
-                node->rightChild = rotatePTRight(node->rightChild);
-                return rotatePTLeft(node);
+                node->rightChild = ptRotateRight(node->rightChild);
+                return ptRotateLeft(node);
             }
         }
     }
@@ -226,12 +226,12 @@ struct pageTreeNode* insertPTNodeInternal(struct pageTreeNode* node, uint32_t ad
     return node;
 }
 
-void insertPTTreeNode(uint32_t address, unsigned char numpages) {
+void ptInsertTreeNode(uint32_t address, unsigned char numpages) {
 
-    root = insertPTNodeInternal(root,address, numpages);
+    ptRoot = ptInsertNodeInternal(ptRoot,address, numpages);
 }
 
-struct pageTreeNode* minValuePTNode(struct pageTreeNode* node) {
+struct pageTreeNode* ptMinValueNode(struct pageTreeNode* node) {
     struct pageTreeNode* current = node;
 
     while (current->leftChild)
@@ -240,14 +240,14 @@ struct pageTreeNode* minValuePTNode(struct pageTreeNode* node) {
     return current;
 }
 
-struct pageTreeNode *deletePTNodeInternal(struct pageTreeNode *root, uint32_t address) {
+struct pageTreeNode *ptDeleteNodeInternal(struct pageTreeNode *root, uint32_t address) {
     if (!root) return root;
 
     if (address < root->address) {
-        root->leftChild = deletePTNodeInternal(root->leftChild, address);
+        root->leftChild = ptDeleteNodeInternal(root->leftChild, address);
     } else {
         if (address > root->address) {
-            root->rightChild = deletePTNodeInternal(root->rightChild, address);
+            root->rightChild = ptDeleteNodeInternal(root->rightChild, address);
         } else {
             if ((!root->leftChild) || ((!root->rightChild))) {
                 struct pageTreeNode *temp = root->leftChild ? root->leftChild : root->rightChild;
@@ -259,43 +259,43 @@ struct pageTreeNode *deletePTNodeInternal(struct pageTreeNode *root, uint32_t ad
                     *root = *temp;
                 }
 
-                putNodeInFreeList(temp);
+                ptPutNodeInFreeList(temp);
 
             } else {
-                struct pageTreeNode *temp = minValuePTNode(root->rightChild);
+                struct pageTreeNode *temp = ptMinValueNode(root->rightChild);
                 root->address = temp->address;
-                root->rightChild = deletePTNodeInternal(root->rightChild, temp->address);
+                root->rightChild = ptDeleteNodeInternal(root->rightChild, temp->address);
             }
         }
         if (!root) return root;
 
         root->height = 1 + ptMax(ptHeight(root->leftChild), ptHeight(root->rightChild));
-        int balance = getPTBalance(root);
+        int balance = ptGetBalance(root);
 
-        if ((balance > 1) && (getPTBalance(root->leftChild) >= 0)) 
-            return rotatePTRight(root);
+        if ((balance > 1) && (ptGetBalance(root->leftChild) >= 0)) 
+            return ptRotateRight(root);
 
-        if ((balance > 1) && (getPTBalance(root->leftChild) < 0)) {
-            root->leftChild = rotatePTLeft(root->leftChild);
-            return rotatePTRight(root);
+        if ((balance > 1) && (ptGetBalance(root->leftChild) < 0)) {
+            root->leftChild = ptRotateLeft(root->leftChild);
+            return ptRotateRight(root);
         }
 
-        if ((balance < -1) && (getPTBalance(root->rightChild) < 0))
-            return rotatePTLeft(root);
-        if ((balance < -1) && (getPTBalance(root->rightChild) > 0)) {
-            root->rightChild = rotatePTRight(root->rightChild);
-            return rotatePTLeft(root);
+        if ((balance < -1) && (ptGetBalance(root->rightChild) < 0))
+            return ptRotateLeft(root);
+        if ((balance < -1) && (ptGetBalance(root->rightChild) > 0)) {
+            root->rightChild = ptRotateRight(root->rightChild);
+            return ptRotateLeft(root);
         }
     }
 
     return root;
 }
 
-void deletePTTreeNode(uint32_t address) {
-    root =  deletePTNodeInternal(root, address);
+void ptDeleteTreeNode(uint32_t address) {
+    ptRoot =  ptDeleteNodeInternal(ptRoot, address);
 }
 
-struct pageTreeNode *getPTNodeInternal(struct pageTreeNode *root, uint32_t address) {
+struct pageTreeNode *ptGetNodeInternal(struct pageTreeNode *root, uint32_t address) {
     // empty tree?
     if (!root) return nullptr;
 
@@ -303,14 +303,14 @@ struct pageTreeNode *getPTNodeInternal(struct pageTreeNode *root, uint32_t addre
     if (root->address == address) return root;
 
     if (root->address > address) {
-        return getPTNodeInternal(root->leftChild, address);
+        return ptGetNodeInternal(root->leftChild, address);
     }
 
-    return getPTNodeInternal(root->rightChild, address);
+    return ptGetNodeInternal(root->rightChild, address);
 }
 
 struct pageTreeNode *getPageTreeNode(uint32_t address) {
-    return getPTNodeInternal(root, address);
+    return ptGetNodeInternal(ptRoot, address);
 }
 
 pte_t getPTEFromAddress(uint32_t addr) {
@@ -414,7 +414,7 @@ void* allocPage(size_t size) {
             address += 0x1000; // next page
         }
         // add the address and size to the tree
-        insertPTTreeNode(start_address,numpages);
+        ptInsertTreeNode(start_address,numpages);
     }
 
     return (void *)start_address;
@@ -444,7 +444,7 @@ bool freePage(uint32_t ptr) {
 }
 
 bool initPageTree() {
-    bool rtncde = addFreePTNodes();
+    bool rtncde = ptAddFreeNodes();
 
     return rtncde;
 }

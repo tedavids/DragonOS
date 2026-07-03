@@ -2,6 +2,10 @@
 #include <string.h>
 
 int memcmp(const void* aptr, const void* bptr, size_t size) {
+    if (!aptr) return -999;
+    if (!bptr) return 999;
+    if (!size) return 0;
+    
     const unsigned char* a = (const unsigned char*) aptr;
     const unsigned char* b = (const unsigned char*) bptr;
 
